@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2011 The Android Open Source Project
+ * Copyright (C) 2013 Tieto Poland Sp. z o.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,6 +42,14 @@ class DimAnimator {
 
     int mLastDimWidth, mLastDimHeight;
 
+	/**
+     * Author: Onskreen
+     * Date: 06/05/2011
+     *
+     * Setting DimAnimator position variables
+     */
+    int mDimX = 0, mDimY = 0;
+
     DimAnimator (SurfaceSession session, final int layerStack) {
         try {
             if (WindowManagerService.DEBUG_SURFACE_TRACE) {
@@ -76,8 +85,8 @@ class DimAnimator {
 
         // Multiply by 1.5 so that rotating a frozen surface that includes this does not expose a
         // corner.
-        final int dw = (int) (params.mDimWidth * 1.5);
-        final int dh = (int) (params.mDimHeight * 1.5);
+        final int dw = (int) (params.mDimWidth);//(int) (params.mDimWidth * 1.5);
+        final int dh = (int) (params.mDimHeight);//(int) (params.mDimHeight * 1.5);
         final WindowStateAnimator winAnimator = params.mDimWinAnimator;
         final float target = params.mDimTarget;
         if (!mDimShown) {
@@ -88,7 +97,17 @@ class DimAnimator {
                 mLastDimWidth = dw;
                 mLastDimHeight = dh;
                 // back off position so mDimXXX/4 is before and mDimXXX/4 is after
-                mDimSurface.setPosition(-1 * dw / 6, -1 * dh /6);
+                //mDimSurface.setPosition(-1 * dw / 6, -1 * dh /6);
+                /**
+                 * Author: Onskreen
+                 * Date: 30/03/2011
+                 *
+                 * set the correct position based on the x,y set in
+                 * performLayoutAndPlaceSurfacesLockedInner method.
+                 * NOTE (4.8.2011): Dimming feature reverted for now until can
+                 * be resolved why causing issue on Viewsonic.
+                 */
+                mDimSurface.setPosition(mDimX, mDimY);
                 mDimSurface.setSize(dw, dh);
                 mDimSurface.show();
             } catch (RuntimeException e) {
@@ -99,7 +118,10 @@ class DimAnimator {
             mLastDimHeight = dh;
             mDimSurface.setSize(dw, dh);
             // back off position so mDimXXX/4 is before and mDimXXX/4 is after
-            mDimSurface.setPosition(-1 * dw / 6, -1 * dh /6);
+            //mDimSurface.setPosition(-1 * dw / 6, -1 * dh /6);
+            mDimSurface.setPosition(mDimX, mDimY);
+		} else {
+			mDimSurface.setPosition(mDimX, mDimY);
         }
 
         mDimSurface.setLayer(winAnimator.mAnimLayer - WindowManagerService.LAYER_OFFSET_DIM);

@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2006 The Android Open Source Project
+ * Copyright (C) 2013 Tieto Poland Sp. z o. o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -246,6 +247,57 @@ public interface IActivityManager extends IInterface {
     // ActivityManagerService remaining set.
     public void handleApplicationStrictModeViolation(IBinder app, int violationMask,
             StrictMode.ViolationInfo crashInfo) throws RemoteException;
+
+
+    /**
+     * Author: Onskreen
+     * Date: 15/02/2011
+     *
+     * Cornerstone specific Activity capabilities
+     */
+    public void swapPanels(int panelIndex) throws RemoteException;
+
+    /**
+     * Author: Onskreen
+     * Date: 22/02/2011
+     *
+     * Cornerstone specific Activity capabilities
+     */
+    public void setCornerstoneState(boolean open) throws RemoteException;
+
+    /**
+     * Author: Onskreen
+     * Date: 28/02/2011
+     *
+     * Sets the ICornerstoneManager interface, so that AMS can notify CSPanel app whenever CS app
+     * gains or loses the focus.
+     */
+    public void setCornerstoneManager(ICornerstoneManager cs) throws RemoteException;
+
+    /**
+     * Author: Onskreen
+     * Date: 28/02/2011
+     *
+     * WMS notifies to AMS to broadcst the CornerstoneManager's onCornerStonePanelFocusChanged
+     * method so that CSPanel changes the cs apps' controls appropriately.
+     */
+    public void broadcastCornerstonePanelFocusChanged(String pkgName, boolean focus, int panelIndex) throws RemoteException;
+
+    /**
+     * Author: Onskreen
+     * Date: 08/03/2011
+     *
+     * Notifies AMS to launch the Cornerstone app in appropriate index.
+     */
+     public void startCornerstoneApp(Intent intent, int panelIndex) throws RemoteException;
+
+    /**
+     * Author: Onskreen
+     * Date: 11/04/2011
+     *
+     * Notifies AMS to set the focused Cornerstone app in appropriate index.
+     */
+     public void setCornerstoneFocusedApp(int panelIndex) throws RemoteException;
 
     /*
      * This will deliver the specified signal to all the persistent processes. Currently only 
@@ -624,4 +676,48 @@ public interface IActivityManager extends IInterface {
     int INPUT_DISPATCHING_TIMED_OUT_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+158;
     int CLEAR_PENDING_BACKUP_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+159;
     int GET_INTENT_FOR_INTENT_SENDER_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+160;
+
+    /**
+     * Author: Onskreen
+     * Date: 15/02/2011
+     *
+     * Cornerstone specific transactions
+     */
+    int SWAP_PANELS_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+161;
+    /**
+     * Author: Onskreen
+     * Date: 22/02/2011
+     *
+     * Cornerstone specific transactions
+     */
+    int CORNERSTONE_STATE_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+162;
+    /**
+     * Author: Onskreen
+     * Date: 28/02/2011
+     *
+     * Cornerstone specific transactions
+     */
+    int CORNERSTONE_MANAGER_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+163;
+    /**
+     * Author: Onskreen
+     * Date: 28/02/2011
+     *
+     * Cornerstone specific transactions
+     */
+    int CORNERSTONE_MANAGER_BROADCAST_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+164;
+    /**
+     * Author: Onskreen
+     * Date: 08/03/2011
+     *
+     * Cornerstone specific transactions
+     */
+    int START_CORNERSTONE_APP_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+165;
+
+    /**
+     * Author: Onskreen
+     * Date: 11/04/2011
+     *
+     * Cornerstone specific transactions
+     */
+    int SET_CORNERSTONE_FOCUSED_APP_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+166;
 }

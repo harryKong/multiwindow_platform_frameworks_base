@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2010 The Android Open Source Project
+ * Copyright (C) 2013 Tieto Poland Sp. z o.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -397,11 +398,18 @@ final class InputMonitor implements InputManagerService.WindowManagerCallbacks {
         if (newApp == null) {
             mService.mInputManager.setFocusedApplication(null);
         } else {
-            final InputApplicationHandle handle = newApp.mInputApplicationHandle;
+            /**
+             * Author: Onskreen
+             * Date: 10/12/2011
+             *
+             * commented out to support the user input for
+             * multiple visible apps running in Cornerstone.
+             */
+            /*final InputApplicationHandle handle = newApp.mInputApplicationHandle;
             handle.name = newApp.toString();
             handle.dispatchingTimeoutNanos = newApp.inputDispatchingTimeoutNanos;
 
-            mService.mInputManager.setFocusedApplication(handle);
+            mService.mInputManager.setFocusedApplication(handle);*/
         }
     }
     

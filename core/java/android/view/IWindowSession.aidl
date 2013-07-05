@@ -1,6 +1,7 @@
 /* //device/java/android/android/view/IWindowSession.aidl
 **
 ** Copyright 2006, The Android Open Source Project
+** Copyright (C) 2013 Tieto Poland Sp. z o.o.
 **
 ** Licensed under the Apache License, Version 2.0 (the "License"); 
 ** you may not use this file except in compliance with the License. 
@@ -185,4 +186,14 @@ interface IWindowSession {
      * Notifies that a rectangle on the screen has been requested.
      */
     void onRectangleOnScreenRequested(IBinder token, in Rect rectangle, boolean immediate);
+
+/**
+     * Author: Onskreen
+     * Date: 17/02/2011
+     *
+     * Notifies the WindowManagerService to reshuffle its z-order to dispatch the user
+     * input event to the newly focused window.
+     */
+    void handleFocusChange(IBinder token);
+
 }

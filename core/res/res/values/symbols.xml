@@ -1131,6 +1131,7 @@
   <java-symbol type="xml" name="kg_password_kbd_numeric" />
   <java-symbol type="xml" name="power_profile" />
   <java-symbol type="xml" name="time_zones_by_country" />
+  <java-symbol type="xml" name="cornerstone" />
   <java-symbol type="xml" name="sms_short_codes" />
 
   <java-symbol type="raw" name="accessibility_gestures" />
@@ -1514,6 +1515,14 @@
   <java-symbol type="anim" name="screen_user_exit" />
   <java-symbol type="anim" name="screen_user_enter" />
   <java-symbol type="anim" name="window_move_from_decor" />
+  <java-symbol type="anim" name="activity_close_enter_reverse" />
+  <java-symbol type="anim" name="activity_close_exit_reverse" />
+  <java-symbol type="anim" name="activity_open_enter_reverse" />
+  <java-symbol type="anim" name="activity_open_exit_reverse" />
+  <java-symbol type="anim" name="task_close_enter_reverse" />
+  <java-symbol type="anim" name="task_close_exit_reverse" />
+  <java-symbol type="anim" name="task_open_enter_reverse" />
+  <java-symbol type="anim" name="task_open_exit_reverse" />
   <java-symbol type="array" name="config_autoBrightnessButtonBacklightValues" />
   <java-symbol type="array" name="config_autoBrightnessKeyboardBacklightValues" />
   <java-symbol type="array" name="config_autoBrightnessLcdBacklightValues" />

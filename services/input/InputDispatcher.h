@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2010 The Android Open Source Project
+ * Copyright (C) 2013 Tieto Poland Sp. z o.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -395,6 +396,14 @@ public:
     virtual status_t unregisterInputChannel(const sp<InputChannel>& inputChannel);
 
 private:
+    /**
+     * Author: Onskreen
+     * Date: 25/05/2011
+     *
+     * Cornerstone Utility Methods
+     */
+    String8 getSubStr(const char* src);
+    String8 getNonAppSubStr(const char* src);
     template <typename T>
     struct Link {
         T* next;
@@ -1002,6 +1011,14 @@ private:
             const sp<InputChannel>& inputChannel);
     nsecs_t getTimeSpentWaitingForApplicationLocked(nsecs_t currentTime);
     void resetANRTimeoutsLocked();
+
+    /**
+     * Author: Onskreen
+     * Date: 25/05/2011
+     *
+     * To determine if the window is of type dialog.
+     */
+    bool isDialog(const InputWindowInfo* window);
 
     int32_t findFocusedWindowTargetsLocked(nsecs_t currentTime, const EventEntry* entry,
             Vector<InputTarget>& inputTargets, nsecs_t* nextWakeupTime);

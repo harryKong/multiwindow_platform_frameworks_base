@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2011 The Android Open Source Project
+ * Copyright (C) 2013 Tieto Poland Sp. z o.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +32,14 @@ class DimSurface {
     int mDimColor = 0;
     int mLayer = -1;
     int mLastDimWidth, mLastDimHeight;
+
+/**
+     * Author: Onskreen
+     * Date: 21/12/2011
+     *
+     * Setting DimSurface position variables
+     */
+    int mDimX = 0, mDimY = 0;
 
     DimSurface(SurfaceSession session, final int layerStack) {
         try {
@@ -71,7 +80,15 @@ class DimSurface {
             try {
                 mLastDimWidth = dw;
                 mLastDimHeight = dh;
-                mDimSurface.setPosition(0, 0);
+                //mDimSurface.setPosition(0, 0);
+                /**
+                 * Author: Onskreen
+                 * Date: 21/12/2011
+                 *
+                 * set the correct position based on the x,y set in
+                 * performLayoutAndPlaceSurfacesLockedInner method.
+                 */
+                mDimSurface.setPosition(mDimX, mDimY);
                 mDimSurface.setSize(dw, dh);
                 mDimSurface.setLayer(layer);
                 mDimSurface.show();

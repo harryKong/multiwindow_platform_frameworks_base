@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2012 The Android Open Source Project
+ * Copyright (C) 2013 Tieto Poland Sp. z o.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -439,7 +440,33 @@ public class ActiveServices {
 
         ActivityRecord activity = null;
         if (token != null) {
-            activity = mAm.mMainStack.isInStackLocked(token);
+
+                /**
+                 * Author: Onskreen
+                 * Date: 27/01/2011
+                 *
+                 * Choosing between stacks
+                 */
+                int stack = mAm.getActivityStack(token);
+                ActivityStack targetStack = null;
+                //Cornerstone Panel
+                if(stack >= 0) {
+                    if(stack < mAm.mCornerstonePanelStacks.size()) {
+                        targetStack = mAm.mCornerstonePanelStacks.get(stack);
+                    } else {
+                        Log.e(TAG, "Found in Non-Existent Stack");
+                        return -1;
+                    }
+                } else if(stack == ActivityManagerService.CORNERSTONE_STACK) {
+                    //Cornerstone
+                    targetStack = mAm.mCornerstoneStack;
+                } else if(stack == ActivityManagerService.MAIN_STACK || stack == ActivityManagerService.NO_STACK) {
+                    //Main stack or Unknown
+                    targetStack = mAm.mMainStack;
+                }
+                activity = targetStack.isInStackLocked(token);
+
+
             if (activity == null) {
                 Slog.w(TAG, "Binding with unknown activity: " + token);
                 return 0;
