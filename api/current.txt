@@ -18743,6 +18743,7 @@ package android.provider {
     field public static final java.lang.String ACTION_APPLICATION_DEVELOPMENT_SETTINGS = "android.settings.APPLICATION_DEVELOPMENT_SETTINGS";
     field public static final java.lang.String ACTION_APPLICATION_SETTINGS = "android.settings.APPLICATION_SETTINGS";
     field public static final java.lang.String ACTION_BLUETOOTH_SETTINGS = "android.settings.BLUETOOTH_SETTINGS";
+    field public static final java.lang.String ACTION_CORNERSTONE_SETTINGS = "android.settings.MULTIWINDOW_SETTINGS";
     field public static final java.lang.String ACTION_DATA_ROAMING_SETTINGS = "android.settings.DATA_ROAMING_SETTINGS";
     field public static final java.lang.String ACTION_DATE_SETTINGS = "android.settings.DATE_SETTINGS";
     field public static final java.lang.String ACTION_DEVICE_INFO_SETTINGS = "android.settings.DEVICE_INFO_SETTINGS";
@@ -25826,6 +25827,7 @@ package android.view {
     method protected final int getForcedWindowFlags();
     method public abstract android.view.LayoutInflater getLayoutInflater();
     method protected final int getLocalFeatures();
+    method public int getStackId();
     method public abstract int getVolumeControlStream();
     method public android.view.WindowManager getWindowManager();
     method public final android.content.res.TypedArray getWindowStyle();
@@ -25835,10 +25837,12 @@ package android.view {
     method public abstract void invalidatePanelMenu(int);
     method public final boolean isActive();
     method public abstract boolean isFloating();
+    method public boolean isMwPanel();
     method public abstract boolean isShortcutKey(int, android.view.KeyEvent);
     method public final void makeActive();
     method protected abstract void onActive();
     method public abstract void onConfigurationChanged(android.content.res.Configuration);
+    method public void onWindowFocusChanged(int);
     method public abstract void openPanel(int, android.view.KeyEvent);
     method public abstract android.view.View peekDecorView();
     method public abstract boolean performContextMenuIdentifierAction(int, int);
@@ -25869,6 +25873,7 @@ package android.view {
     method public void setGravity(int);
     method public void setLayout(int, int);
     method public void setSoftInputMode(int);
+    method public void setStackId(int);
     method public abstract void setTitle(java.lang.CharSequence);
     method public abstract void setTitleColor(int);
     method public void setType(int);

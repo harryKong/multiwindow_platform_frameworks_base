@@ -32,6 +32,7 @@ import android.content.pm.ProviderInfo;
 import android.content.pm.UserInfo;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
+import android.graphics.Rect;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Debug;
@@ -51,7 +52,8 @@ import java.util.List;
  *
  * {@hide}
  */
-public interface IActivityManager extends IInterface {
+public interface IActivityManager extends IInterface{
+    public ActivityStackInfo getStackInfo(int stackId) throws RemoteException;
     public int startActivity(IApplicationThread caller,
             Intent intent, String resolvedType, IBinder resultTo, String resultWho,
             int requestCode, int flags, String profileFile,
@@ -274,6 +276,8 @@ public interface IActivityManager extends IInterface {
      */
     public void setCornerstoneManager(ICornerstoneManager cs) throws RemoteException;
 
+    public void unsetCornerstoneManager(ICornerstoneManager cs) throws RemoteException;
+
     /**
      * Author: Onskreen
      * Date: 28/02/2011
@@ -298,6 +302,70 @@ public interface IActivityManager extends IInterface {
      * Notifies AMS to set the focused Cornerstone app in appropriate index.
      */
      public void setCornerstoneFocusedApp(int panelIndex) throws RemoteException;
+
+     /**
+      * Creates new window and stack
+      * @param r window position in display coordinates
+      * @return stack id
+      * @throws RemoteException
+      */
+     public int initWindow(Rect r) throws RemoteException;
+
+     /**
+      * Removes window and stack
+      * @param stackId identifies stack
+      * @throws RemoteException
+      */
+     public void removeWindow(int stackId) throws RemoteException;
+
+     /**
+      * Change window position
+      * @param stackId identifies stack
+      * @param r new window position
+      * @return true on success
+      * @throws RemoteException
+      */
+     public boolean relayoutWindow(int stackId, Rect r) throws RemoteException;
+
+     /**
+      * Change window position callback
+      * @param stackId identifies stack
+      * @param r new window position
+      * @throws RemoteException
+      */
+     public void relayoutWindowCallback(int stackId, Rect r) throws RemoteException;
+
+     /**
+      * Obtain main window aka main panel stackId
+      * @return
+      * @throws RemoteException
+      */
+     public int getMainWindowStackId() throws RemoteException;
+
+     /**
+      * Obtain CSPanel window stackId
+      * @return
+      * @throws RemoteException
+      */
+     public int getCornerstoneWindowStackId() throws RemoteException;
+
+     /**
+      * Obtain Activity stackId
+      * @return
+      * @throws RemoteException
+      */
+     public int getActivityStackIdByToken(IBinder binder) throws RemoteException;
+
+     /**
+      * Sets the IMultiwindowManager interface, so AMS can notify manager about removed windows.
+      */
+     public void setMultiwindowManager(IMultiwindowManager manager) throws RemoteException;
+
+     /**
+      * Set restriction for relayouting windows. If restrict is true, than only caller can
+      * relayout window (Useful for docked mode in TMW).
+      */
+     public void setMultiwindowRelayoutRestriction(boolean restrict) throws RemoteException;
 
     /*
      * This will deliver the specified signal to all the persistent processes. Currently only 
@@ -720,4 +788,17 @@ public interface IActivityManager extends IInterface {
      * Cornerstone specific transactions
      */
     int SET_CORNERSTONE_FOCUSED_APP_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+166;
+
+    int INIT_WINDOW_CORNERSTONE_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+167;
+    int REMOVE_WINDOW_CORNERSTONE_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+168;
+    int RELAYOUT_WINDOW_CORNERSTONE_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+169;
+    int GET_MAIN_WINDOW_STACK_ID_CORNERSTONE_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+170;
+    int GET_CORNERSTONE_WINDOW_STACK_ID_CORNERSTONE_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+171;
+    int GET_STACK_INFO_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+172;
+    int GET_ACTIVITY_STACK_ID_BY_TOKEN_CORNERSTONE_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+173;
+    int SET_MULTIWINDOW_MANAGER_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+174;
+
+    int CORNERSTONE_MANAGER_UNSET_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+175;
+    int RELAYOUT_WINDOW_CALLBACK_CORNERSTONE_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+176;
+    int SET_MULTIWINDOW_RELAYOUT_RESTRICTION_TRASNSACTION = IBinder.FIRST_CALL_TRANSACTION+177;
 }

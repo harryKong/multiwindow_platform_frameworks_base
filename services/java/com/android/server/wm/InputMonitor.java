@@ -17,10 +17,13 @@
 
 package com.android.server.wm;
 
+import static android.view.WindowManager.LayoutParams.TYPE_WALLPAPER;
+
 import com.android.server.input.InputManagerService;
 import com.android.server.input.InputApplicationHandle;
 import com.android.server.input.InputWindowHandle;
 import com.android.server.wm.WindowManagerService.AllWindowsIterator;
+import com.android.server.wm.WindowManagerService.WindowPanel;
 
 import android.app.ActivityManagerNative;
 import android.graphics.Rect;
@@ -33,7 +36,7 @@ import android.view.KeyEvent;
 import android.view.WindowManager;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Iterator;
 
 final class InputMonitor implements InputManagerService.WindowManagerCallbacks {
     private final WindowManagerService mService;
@@ -55,6 +58,7 @@ final class InputMonitor implements InputManagerService.WindowManagerCallbacks {
     // Array of window handles to provide to the input dispatcher.
     private InputWindowHandle[] mInputWindowHandles;
     private int mInputWindowHandleCount;
+    private ArrayList<InputWindowHandle> mTmpInputWindowHandles = new ArrayList<InputWindowHandle>();
 
     // Set to true when the first input device configuration change notification
     // is received to indicate that the input devices are ready.
@@ -152,17 +156,6 @@ final class InputMonitor implements InputManagerService.WindowManagerCallbacks {
         return 0; // abort dispatching
     }
 
-    private void addInputWindowHandleLw(final InputWindowHandle windowHandle) {
-        if (mInputWindowHandles == null) {
-            mInputWindowHandles = new InputWindowHandle[16];
-        }
-        if (mInputWindowHandleCount >= mInputWindowHandles.length) {
-            mInputWindowHandles = Arrays.copyOf(mInputWindowHandles,
-                    mInputWindowHandleCount * 2);
-        }
-        mInputWindowHandles[mInputWindowHandleCount++] = windowHandle;
-    }
-
     private void addInputWindowHandleLw(final InputWindowHandle inputWindowHandle,
             final WindowState child, final int flags, final int type,
             final boolean isVisible, final boolean hasFocus, final boolean hasWallpaper) {
@@ -198,7 +191,7 @@ final class InputMonitor implements InputManagerService.WindowManagerCallbacks {
 
         child.getTouchableRegion(inputWindowHandle.touchableRegion);
 
-        addInputWindowHandleLw(inputWindowHandle);
+        mTmpInputWindowHandles.add(inputWindowHandle);
     }
 
     private void clearInputWindowHandlesLw() {
@@ -237,7 +230,7 @@ final class InputMonitor implements InputManagerService.WindowManagerCallbacks {
             }
             final InputWindowHandle dragWindowHandle = mService.mDragState.mDragWindowHandle;
             if (dragWindowHandle != null) {
-                addInputWindowHandleLw(dragWindowHandle);
+                mTmpInputWindowHandles.add(dragWindowHandle);
             } else {
                 Slog.w(WindowManagerService.TAG, "Drag is in progress but there is no "
                         + "drag window handle.");
@@ -246,7 +239,7 @@ final class InputMonitor implements InputManagerService.WindowManagerCallbacks {
 
         final int NFW = mService.mFakeWindows.size();
         for (int i = 0; i < NFW; i++) {
-            addInputWindowHandleLw(mService.mFakeWindows.get(i).mWindowHandle);
+            mTmpInputWindowHandles.add(mService.mFakeWindows.get(i).mWindowHandle);
         }
 
         // Add all windows on the default display.
@@ -291,6 +284,45 @@ final class InputMonitor implements InputManagerService.WindowManagerCallbacks {
                         isVisible, hasFocus, hasWallpaper);
             }
         }
+
+        ArrayList<InputWindowHandle> windowsInputWindowHandle = new ArrayList<InputWindowHandle>();
+        Iterator<InputWindowHandle> iter = mTmpInputWindowHandles.iterator();
+        while(iter.hasNext()) {
+            InputWindowHandle iwh = iter.next();
+            WindowState ws = (WindowState)iwh.windowState;
+            if (false) {
+                Slog.d(WindowManagerService.TAG, "########################\n" + iwh.windowState + "\n########################");
+            }
+            if (ws != null) {
+                if  (ws.mAppToken != null) {
+                    WindowPanel wp = mService.findWindowPanel(ws.mAppToken.token);
+                    if ((wp != null && wp.getStackInfo().isMain())) {
+                        windowsInputWindowHandle.add(iwh);
+                        iter.remove();
+                        if (false) {
+                            Slog.d(WindowManagerService.TAG, "########################\nRemove: " + iwh.windowState + "\n########################");
+                        }
+                    }
+                } else  if (ws.mAttrs.type == TYPE_WALLPAPER) {
+                    windowsInputWindowHandle.add(iwh);
+                    iter.remove();
+                    if (false) {
+                        Slog.d(WindowManagerService.TAG, "########################\nRemove: " + iwh.windowState + "\n########################");
+                    }
+                }
+            }
+        }
+        mTmpInputWindowHandles.addAll(windowsInputWindowHandle);
+        mInputWindowHandleCount = mTmpInputWindowHandles.size();
+        mInputWindowHandles = new InputWindowHandle[mInputWindowHandleCount];
+        mInputWindowHandles = mTmpInputWindowHandles.toArray(mInputWindowHandles);
+        if (false) {
+            Slog.d(WindowManagerService.TAG, "########################\nAfter\n########################");
+            for (InputWindowHandle iwh : mTmpInputWindowHandles) {
+                Slog.d(WindowManagerService.TAG, "########################\n" + iwh.windowState + "\n########################");
+            }
+        }
+        mTmpInputWindowHandles.clear();
 
         // Send windows to native code.
         mService.mInputManager.setInputWindows(mInputWindowHandles);

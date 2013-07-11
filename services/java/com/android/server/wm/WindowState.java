@@ -24,13 +24,27 @@ import static android.view.WindowManager.LayoutParams.TYPE_INPUT_METHOD;
 import static android.view.WindowManager.LayoutParams.TYPE_INPUT_METHOD_DIALOG;
 import static android.view.WindowManager.LayoutParams.TYPE_KEYGUARD;
 import static android.view.WindowManager.LayoutParams.TYPE_WALLPAPER;
+import static android.view.WindowManager.LayoutParams.TYPE_SYSTEM_DIALOG;
+import static android.view.WindowManager.LayoutParams.TYPE_SYSTEM_ALERT;
+import static android.view.WindowManager.LayoutParams.TYPE_STATUS_BAR;
+import static android.view.WindowManager.LayoutParams.TYPE_SEARCH_BAR;
+import static android.view.WindowManager.LayoutParams.TYPE_SYSTEM_ERROR;
+import static android.view.WindowManager.LayoutParams.TYPE_SYSTEM_OVERLAY;
+import static android.view.WindowManager.LayoutParams.TYPE_WALLPAPER;
+
+import static android.view.WindowManager.LayoutParams.TYPE_APPLICATION_ATTACHED_DIALOG;
+import static android.view.WindowManager.LayoutParams.TYPE_KEYGUARD_DIALOG;
+import static android.view.WindowManager.LayoutParams.TYPE_TOAST;
+import static android.view.WindowManager.LayoutParams.TYPE_SYSTEM_ALERT;
+
+import static android.view.WindowManager.LayoutParams.TYPE_CHANGED;
+import static android.view.WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM;
+import static android.view.WindowManager.LayoutParams.FLAG_DIM_BEHIND;
+import static android.view.WindowManager.LayoutParams.TYPE_BASE_APPLICATION;
 
 import com.android.server.input.InputWindowHandle;
 
-import com.android.server.wm.WindowManagerService.Cornerstone_State;
-import com.android.server.wm.WindowManagerService.H;
 import com.android.server.wm.WindowManagerService.WindowPanel;
-
 import android.content.Context;
 import android.content.res.Configuration;
 import android.graphics.Matrix;
@@ -191,6 +205,7 @@ final class WindowState implements WindowManagerPolicy.WindowState {
     float mLastHScale=1, mLastVScale=1;
     final Matrix mTmpMatrix = new Matrix();
 
+    boolean mFrameHasChanged = false;
     // "Real" frame that the application sees, in display coordinate space.
     final Rect mFrame = new Rect();
     final Rect mLastFrame = new Rect();
@@ -522,7 +537,7 @@ final class WindowState implements WindowManagerPolicy.WindowState {
         if(this.mAppToken != null) {
 			WindowPanel wp = mService.findWindowPanel(this.mAppToken.token);
 			if(wp!=null) {
-				if(wp.isCornerstonePanel() &&
+				if(wp.getStackInfo().isCornerstonePanel() &&
 					mAttrs.type == WindowManager.LayoutParams.TYPE_APPLICATION_PANEL
 					&& (frame.left > container.left ||
 						frame.bottom < container.bottom)) {
@@ -964,9 +979,10 @@ final class WindowState implements WindowManagerPolicy.WindowState {
     }
 
     boolean isConfigChanged() {
-        boolean configChanged = mConfiguration != mService.mCurConfiguration
+        Configuration config = mService.getConfigurationLocked();
+        boolean configChanged = mConfiguration != config
                 && (mConfiguration == null
-                        || (mConfiguration.diff(mService.mCurConfiguration) != 0));
+                        || (mConfiguration.diff(config) != 0));
 
         if (mAttrs.type == TYPE_KEYGUARD) {
             // Retain configuration changed status until resetConfiguration called.
@@ -978,9 +994,10 @@ final class WindowState implements WindowManagerPolicy.WindowState {
     }
 
     boolean isConfigDiff(int mask) {
-        return mConfiguration != mService.mCurConfiguration
+        Configuration config = mService.getConfigurationLocked();
+        return mConfiguration != config
                 && mConfiguration != null
-                && (mConfiguration.diff(mService.mCurConfiguration) & mask) != 0;
+                && (mConfiguration.diff(config) & mask) != 0;
     }
 
     void removeLocked() {
@@ -1043,45 +1060,6 @@ final class WindowState implements WindowManagerPolicy.WindowState {
 
     /**
      * Author: Onskreen
-     * Date: 15/04/2011
-     *
-     * Newly added method to WindowManagerPolicy.WindowState.
-     * Returns true if the WindowState will be obstructed by the soft keyboard
-     * due to it's position on the screen.
-     *
-     * Perhaps this should be named wouldBeObstructedByKeyboard, because
-     * doesn't check if IME is present. That is responsibility of the caller.
-     *
-     */
-    public boolean isObstructedByKeyboard() {
-		if(this.mAppToken == null) return false;
-		WindowPanel wp = mService.findWindowPanel(mAppToken.groupId);
-
-		if(mConfiguration == null) {
-			return false;
-		}
-
-		//Landscape logic - Only lower Cornerstone Panel is obstructed
-		if(mConfiguration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
-			if(wp.isCornerstonePanel()&& wp.mCornerstonePanelIndex==1)
-				return true;
-			else
-				return false;
-
-		} else if(mConfiguration.orientation == Configuration.ORIENTATION_PORTRAIT) {
-			//Portrait Logic - Both Cornerstone Panels are obstructed
-			if(wp.isCornerstonePanel())
-				return true;
-			else
-				return false;
-		} else {
-			//Unknown configuration
-			return false;
-		}
-    }
-
-    /**
-     * Author: Onskreen
      * Date: 26/05/2011
      *
      * Newly added method to WindowManagerPolicy.WindowState.
@@ -1102,17 +1080,17 @@ final class WindowState implements WindowManagerPolicy.WindowState {
              *
              * Commented out entire if block for now.
              */
-			dialog = false;
-			/**dialog = ((type == TYPE_APPLICATION_ATTACHED_DIALOG)
+			//dialog = false;
+			dialog = ((type == TYPE_APPLICATION_ATTACHED_DIALOG)
                  || (type == TYPE_KEYGUARD_DIALOG)
                  || (type == TYPE_TOAST)
                  || (type == TYPE_SYSTEM_ERROR)
                  || (type == TYPE_SYSTEM_ALERT)
-               //|| (type == TYPE_SEARCH_BAR)
-               //|| (type == TYPE_STATUS_BAR)
+                 || (type == TYPE_SEARCH_BAR)
+                 || (type == TYPE_STATUS_BAR)
                  || (type == TYPE_SYSTEM_DIALOG)
                  || (type == TYPE_CHANGED)
-                 || (((flags == (FLAG_ALT_FOCUSABLE_IM | FLAG_DIM_BEHIND))) && (type == TYPE_BASE_APPLICATION))) ? true : false; **/
+                 || (((flags == (FLAG_ALT_FOCUSABLE_IM | FLAG_DIM_BEHIND))) && (type == TYPE_BASE_APPLICATION))) ? true : false;
 		}
 		return dialog;
     }

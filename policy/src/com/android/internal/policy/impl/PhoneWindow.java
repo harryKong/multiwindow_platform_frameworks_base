@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2013 Tieto Poland Sp. z o.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,15 +40,22 @@ import com.android.internal.widget.ActionBarContainer;
 import com.android.internal.widget.ActionBarContextView;
 import com.android.internal.widget.ActionBarView;
 
+import android.app.ActivityManagerNative;
+import android.app.ActivityStackInfo;
 import android.app.KeyguardManager;
+import android.content.ComponentName;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.ActivityInfo;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.PixelFormat;
 import android.graphics.Rect;
+import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.media.AudioManager;
 import android.net.Uri;
@@ -77,6 +85,8 @@ import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.View;
+import android.view.View.OnClickListener;
+import android.view.View.OnTouchListener;
 import android.view.ViewGroup;
 import android.view.ViewManager;
 import android.view.ViewParent;
@@ -87,7 +97,10 @@ import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityManager;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
+import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.FrameLayout;
+import android.widget.LinearLayout;
 import android.widget.ImageView;
 import android.widget.PopupWindow;
 import android.widget.ProgressBar;
@@ -123,6 +136,7 @@ public class PhoneWindow extends Window implements MenuBuilder.Callback {
 
     // This is the top-level view of the window, containing the window decor.
     private DecorView mDecor;
+    private DecorMwView mDecorMW;
 
     // This is the view in which the window contents are placed. It is either
     // mDecor itself, or a child of mDecor where the contents go.
@@ -2368,6 +2382,12 @@ public class PhoneWindow extends Window implements MenuBuilder.Callback {
 
         @Override
         protected boolean fitSystemWindows(Rect insets) {
+            if(isMwPanel()){
+                insets.top = insets.top + 50;
+                insets.bottom = insets.bottom;
+                insets.left = insets.left;
+                insets.right = insets.right;
+            }
             mFrameOffsets.set(insets);
             if (getForeground() != null) {
                 drawableChanged();
@@ -2597,6 +2617,160 @@ public class PhoneWindow extends Window implements MenuBuilder.Callback {
             if (alpha >= 0) {
                 setFeatureDrawableAlpha(featureId, alpha);
             }
+        }
+    }
+
+    class DecorMwView {
+
+        private TextView mTitle;
+        private LinearLayout mHeader;
+        private ImageButton mCloseBtn;
+        private ImageButton mSwapBtn;
+        private ImageButton mLaunchBtn;
+
+        private View mDecorView;
+        private ComponentName mDefaultApp;
+
+        private int lastX = 0;
+        private int lastY = 0;
+
+        public DecorMwView() {
+            String cls = getContext().getString(com.android.internal.R.string.mw_launcher_class);
+            String pkg = cls.substring(0, cls.lastIndexOf("."));
+            mDefaultApp = new ComponentName(pkg, cls);
+
+            mDecorView = getLayoutInflater().inflate(com.android.internal.R.layout.mw_decor, null);
+
+            mHeader = (LinearLayout)mDecorView.findViewById(com.android.internal.R.id.mw_decor_header);
+            mTitle = (TextView)mDecorView.findViewById(com.android.internal.R.id.mw_decor_title);
+            mCloseBtn = (ImageButton)mDecorView.findViewById(com.android.internal.R.id.mwCloseBtn);
+            mSwapBtn = (ImageButton)mDecorView.findViewById(com.android.internal.R.id.mwSwapBtn);
+            mLaunchBtn = (ImageButton)mDecorView.findViewById(com.android.internal.R.id.mwLaunchBtn);
+
+            ApplicationInfo ai = getContext().getApplicationInfo();
+            PackageManager pm = getContext().getPackageManager();
+            mTitle.setText(pm.getApplicationLabel(ai));
+
+            mDecorView.setOnTouchListener(new OnTouchListener() {
+                private boolean mRelayoutSuccess = false;
+
+                @Override
+                public boolean onTouch(View v, MotionEvent event) {
+                    final int rawX = (int) event.getRawX();
+                    final int rawY = (int) event.getRawY();
+                    Rect drawingRect = new Rect();
+                    mDecor.getDrawingRect(drawingRect);
+
+                    if(MotionEvent.ACTION_DOWN == event.getAction()){
+                        lastX = (int) event.getX();
+                        lastY = (int) event.getY();
+                        mRelayoutSuccess = false;
+                    }
+                    if(MotionEvent.ACTION_MOVE == event.getAction()){
+                        try{
+                            mRelayoutSuccess = ActivityManagerNative.getDefault().relayoutWindow(getStackId(),
+                                new Rect( drawingRect.left + rawX - lastX,
+                                          drawingRect.top + rawY - lastY,
+                                          drawingRect.left + drawingRect.right + rawX - lastX,
+                                          drawingRect.top + drawingRect.bottom + rawY - lastY));
+                        }
+                        catch (RemoteException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    if(MotionEvent.ACTION_UP == event.getAction()){
+                        try{
+                            if (mRelayoutSuccess) {
+                                ActivityManagerNative.getDefault().relayoutWindowCallback(getStackId(),
+                                        new Rect( drawingRect.left + rawX - lastX,
+                                                drawingRect.top + rawY - lastY,
+                                                drawingRect.left + drawingRect.right + rawX - lastX,
+                                                drawingRect.top + drawingRect.bottom + rawY - lastY));
+                            }
+                        }
+                        catch (RemoteException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    return true;
+                }
+            });
+
+            mCloseBtn.setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    try{
+                        Rect drawingRect = new Rect();
+                        mDecor.getDrawingRect(drawingRect);
+                        ActivityManagerNative.getDefault().relayoutWindow(getStackId(), new Rect( drawingRect.left + 3000, drawingRect.top, drawingRect.right + 3000, drawingRect.bottom));
+                        ActivityManagerNative.getDefault().removeWindow(getStackId());
+                    }
+                    catch (RemoteException e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
+
+            mSwapBtn.setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    try{
+                        ActivityManagerNative.getDefault().swapPanels(getStackId());
+                    }
+                    catch (RemoteException e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
+
+            mLaunchBtn.setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Intent intent = new Intent();
+                    intent.setComponent(mDefaultApp);
+                    startMultiwindowApp(intent, getStackId());
+                }
+            });
+            setFocus();
+        }
+
+        public void startMultiwindowApp(final Intent intent,final int index) {
+            new Thread(new Runnable() {
+                public void run() {
+                    try {
+                        ActivityManagerNative.getDefault().startCornerstoneApp(intent, index);
+                    } catch (RemoteException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }).start();
+        }
+
+        public View getView(){
+            return mDecorView;
+        }
+
+        void setFocus(){
+            mCloseBtn.setBackgroundResource(com.android.internal.R.drawable.mw_content_remove_click);
+            mSwapBtn.setBackgroundResource(com.android.internal.R.drawable.mw_full_screen_click);
+            mLaunchBtn.setBackgroundResource(com.android.internal.R.drawable.mw_collections_view_as_grid_click);
+            mHeader.setBackgroundResource(com.android.internal.R.drawable.mw_app_header_focused);
+            mDecorView.invalidate();
+        }
+
+        void unsetFocus(){
+            mCloseBtn.setBackgroundResource(com.android.internal.R.drawable.mw_content_remove);
+            mSwapBtn.setBackgroundResource(com.android.internal.R.drawable.mw_full_screen);
+            mLaunchBtn.setBackgroundResource(com.android.internal.R.drawable.mw_collections_view_as_grid);
+            mHeader.setBackgroundResource(com.android.internal.R.drawable.mw_app_header_unfocused);
+            mDecorView.invalidate();
+        }
+
+        public void processFocus(int stackId) {
+            if(stackId == getStackId())
+                mDecorMW.setFocus();
+            else
+                mDecorMW.unsetFocus();
         }
     }
 
@@ -2865,6 +3039,9 @@ public class PhoneWindow extends Window implements MenuBuilder.Callback {
     private void installDecor() {
         if (mDecor == null) {
             mDecor = generateDecor();
+            if(isMwPanel()){
+                installMWDecor(mDecor);
+            }
             mDecor.setDescendantFocusability(ViewGroup.FOCUS_AFTER_DESCENDANTS);
             mDecor.setIsRootNamespace(true);
             if (!mInvalidatePanelMenuPosted && mInvalidatePanelMenuFeatures != 0) {
@@ -2949,6 +3126,11 @@ public class PhoneWindow extends Window implements MenuBuilder.Callback {
                 }
             }
         }
+    }
+
+    private void installMWDecor(DecorView decor) {
+        mDecorMW = new DecorMwView();
+        decor.addView(mDecorMW.getView());
     }
 
     private Drawable loadImageURI(Uri uri) {
@@ -3657,5 +3839,12 @@ public class PhoneWindow extends Window implements MenuBuilder.Callback {
 
     void sendCloseSystemWindows(String reason) {
         PhoneWindowManager.sendCloseSystemWindows(getContext(), reason);
+    }
+
+    @Override
+    public void onWindowFocusChanged(int stackId) {
+        if(isMwPanel())
+            mDecorMW.processFocus(stackId);
+        super.onWindowFocusChanged(stackId);
     }
 }

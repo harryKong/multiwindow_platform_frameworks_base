@@ -1,3 +1,18 @@
+/*
+ * Copyright (C) 2013 Tieto Poland Sp. z o.o.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.android.server.am;
 
 import java.io.File;
@@ -143,8 +158,8 @@ public class CompatModePackages {
     }
 
     public CompatibilityInfo compatibilityInfoForPackageLocked(ApplicationInfo ai) {
-        CompatibilityInfo ci = new CompatibilityInfo(ai, mService.mConfiguration.screenLayout,
-                mService.mConfiguration.smallestScreenWidthDp,
+        CompatibilityInfo ci = new CompatibilityInfo(ai, mService.getConfigurationLocked().screenLayout,
+                mService.getConfigurationLocked().smallestScreenWidthDp,
                 (getPackageFlags(ai.packageName)&COMPAT_FLAG_ENABLED) != 0);
         //Slog.i(TAG, "*********** COMPAT FOR PKG " + ai.packageName + ": " + ci);
         return ci;
@@ -153,8 +168,8 @@ public class CompatModePackages {
     public int computeCompatModeLocked(ApplicationInfo ai) {
         boolean enabled = (getPackageFlags(ai.packageName)&COMPAT_FLAG_ENABLED) != 0;
         CompatibilityInfo info = new CompatibilityInfo(ai,
-                mService.mConfiguration.screenLayout,
-                mService.mConfiguration.smallestScreenWidthDp, enabled);
+                mService.getConfigurationLocked().screenLayout,
+                mService.getConfigurationLocked().smallestScreenWidthDp, enabled);
         if (info.alwaysSupportsScreen()) {
             return ActivityManager.COMPAT_MODE_NEVER;
         }
@@ -166,7 +181,7 @@ public class CompatModePackages {
     }
 
     public boolean getFrontActivityAskCompatModeLocked() {
-        ActivityRecord r = mService.mMainStack.topRunningActivityLocked(null);
+        ActivityRecord r = mService.crappyGetMainStack().topRunningActivityLocked(null);
         if (r == null) {
             return false;
         }
@@ -178,7 +193,7 @@ public class CompatModePackages {
     }
 
     public void setFrontActivityAskCompatModeLocked(boolean ask) {
-        ActivityRecord r = mService.mMainStack.topRunningActivityLocked(null);
+        ActivityRecord r = mService.crappyGetMainStack().topRunningActivityLocked(null);
         if (r != null) {
             setPackageAskCompatModeLocked(r.packageName, ask);
         }
@@ -200,7 +215,7 @@ public class CompatModePackages {
     }
 
     public int getFrontActivityScreenCompatModeLocked() {
-        ActivityRecord r = mService.mMainStack.topRunningActivityLocked(null);
+        ActivityRecord r = mService.crappyGetMainStack().topRunningActivityLocked(null);
         if (r == null) {
             return ActivityManager.COMPAT_MODE_UNKNOWN;
         }
@@ -208,7 +223,7 @@ public class CompatModePackages {
     }
 
     public void setFrontActivityScreenCompatModeLocked(int mode) {
-        ActivityRecord r = mService.mMainStack.topRunningActivityLocked(null);
+        ActivityRecord r = mService.crappyGetMainStack().topRunningActivityLocked(null);
         if (r == null) {
             Slog.w(TAG, "setFrontActivityScreenCompatMode failed: no top activity");
             return;
@@ -295,12 +310,12 @@ public class CompatModePackages {
             Message msg = mHandler.obtainMessage(MSG_WRITE);
             mHandler.sendMessageDelayed(msg, 10000);
 
-            ActivityRecord starting = mService.mMainStack.topRunningActivityLocked(null);
+            ActivityRecord starting = mService.crappyGetMainStack().topRunningActivityLocked(null);
 
             // All activities that came from the package must be
             // restarted as if there was a config change.
-            for (int i=mService.mMainStack.mHistory.size()-1; i>=0; i--) {
-                ActivityRecord a = (ActivityRecord)mService.mMainStack.mHistory.get(i);
+            for (int i=mService.crappyGetMainStack().mHistory.size()-1; i>=0; i--) {
+                ActivityRecord a = (ActivityRecord)mService.crappyGetMainStack().mHistory.get(i);
                 if (a.info.packageName.equals(packageName)) {
                     a.forceNewConfig = true;
                     if (starting != null && a == starting && a.visible) {
@@ -327,10 +342,10 @@ public class CompatModePackages {
             }
 
             if (starting != null) {
-                mService.mMainStack.ensureActivityConfigurationLocked(starting, 0);
+                mService.crappyGetMainStack().ensureActivityConfigurationLocked(starting, 0);
                 // And we need to make sure at this point that all other activities
                 // are made visible with the correct configuration.
-                mService.mMainStack.ensureActivitiesVisibleLocked(starting, 0);
+                mService.crappyGetMainStack().ensureActivitiesVisibleLocked(starting, 0);
             }
         }
     }
@@ -352,8 +367,8 @@ public class CompatModePackages {
             out.startTag(null, "compat-packages");
 
             final IPackageManager pm = AppGlobals.getPackageManager();
-            final int screenLayout = mService.mConfiguration.screenLayout;
-            final int smallestScreenWidthDp = mService.mConfiguration.smallestScreenWidthDp;
+            final int screenLayout = mService.getConfigurationLocked().screenLayout;
+            final int smallestScreenWidthDp = mService.getConfigurationLocked().smallestScreenWidthDp;
             final Iterator<Map.Entry<String, Integer>> it = pkgs.entrySet().iterator();
             while (it.hasNext()) {
                 Map.Entry<String, Integer> entry = it.next();

@@ -447,22 +447,10 @@ public class ActiveServices {
                  *
                  * Choosing between stacks
                  */
-                int stack = mAm.getActivityStack(token);
-                ActivityStack targetStack = null;
-                //Cornerstone Panel
-                if(stack >= 0) {
-                    if(stack < mAm.mCornerstonePanelStacks.size()) {
-                        targetStack = mAm.mCornerstonePanelStacks.get(stack);
-                    } else {
-                        Log.e(TAG, "Found in Non-Existent Stack");
-                        return -1;
-                    }
-                } else if(stack == ActivityManagerService.CORNERSTONE_STACK) {
-                    //Cornerstone
-                    targetStack = mAm.mCornerstoneStack;
-                } else if(stack == ActivityManagerService.MAIN_STACK || stack == ActivityManagerService.NO_STACK) {
-                    //Main stack or Unknown
-                    targetStack = mAm.mMainStack;
+                ActivityStack targetStack = mAm.getActivityStack(token);
+                if (targetStack == null) {
+                    Log.e(TAG, "Found in Non-Existent Stack");
+                    return -1;
                 }
                 activity = targetStack.isInStackLocked(token);
 

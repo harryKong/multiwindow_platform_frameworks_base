@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2006 The Android Open Source Project
+ * Copyright (C) 2013 Tieto Poland Sp. z o.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -273,6 +274,20 @@ public final class Settings {
     @SdkConstant(SdkConstantType.ACTIVITY_INTENT_ACTION)
     public static final String ACTION_DISPLAY_SETTINGS =
             "android.settings.DISPLAY_SETTINGS";
+
+    /**
+     * Activity Action: Show settings to allow configuration of Cornerstone.
+     * <p>
+     * In some cases, a matching Activity may not exist, so ensure you
+     * safeguard against this.
+     * <p>
+     * Input: Nothing.
+     * <p>
+     * Output: Nothing.
+     */
+    @SdkConstant(SdkConstantType.ACTIVITY_INTENT_ACTION)
+    public static final String ACTION_CORNERSTONE_SETTINGS =
+            "android.settings.MULTIWINDOW_SETTINGS";
 
     /**
      * Activity Action: Show settings to allow configuration of locale.
@@ -2273,6 +2288,42 @@ public final class Settings {
          * @hide
          */
         public static final String POINTER_SPEED = "pointer_speed";
+
+        /**
+         * Cornerstone Start on Boot configuration
+         * @hide
+         */
+        public static final String CORNERSTONE_START_ON_BOOT = "cornerstone_start_on_boot";
+
+        /**
+         * Number of Startup conerstone panels
+         * @hide
+         */
+        public static final String CORNERSTONE_APP_COUNT = "cornerstone_app_count";
+
+        /**
+         * Name of Cornerstone app at Panel 0
+         * @hide
+         */
+        public static final String CORNERSTONE_APP_0 = "cornerstone_app_0";
+
+        /**
+         * Name of Cornerstone app at Panel 1
+         * @hide
+         */
+        public static final String CORNERSTONE_APP_1 = "cornerstone_app_1";
+
+        /**
+         * Name of Cornerstone app at Panel 2
+         * @hide
+         */
+        public static final String CORNERSTONE_APP_2 = "cornerstone_app_2";
+
+        /**
+         * Name of Cornerstone app at Panel 3
+         * @hide
+         */
+        public static final String CORNERSTONE_APP_3 = "cornerstone_app_3";
 
         /**
          * Settings to backup. This is here so that it's in the same place as the settings

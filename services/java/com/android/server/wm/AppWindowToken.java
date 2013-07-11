@@ -309,7 +309,7 @@ class AppWindowToken extends WindowToken {
 		final ArrayList<WindowPanel> WindowPanels = mService.getWindowPanels();
 		for(int i=0; i<WindowPanels.size(); i++) {
 			WindowPanel wp = WindowPanels.get(i);
-			if(wp.isMainPanel()) {
+			if(wp.getStackInfo().isMain()) {
 				if(wp.contains(token)) {
 					return true;
 				} else {
@@ -331,7 +331,7 @@ class AppWindowToken extends WindowToken {
 		final ArrayList<WindowPanel> WindowPanels = mService.getWindowPanels();
 		for(int i=0; i<WindowPanels.size(); i++) {
 			WindowPanel wp = WindowPanels.get(i);
-			if(wp.isCornerstonePanel()) {
+			if(wp.getStackInfo().isCornerstonePanel()) {
 				if(wp.contains(groupId)) {
 					return true;
 				}

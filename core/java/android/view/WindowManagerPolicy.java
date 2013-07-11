@@ -352,16 +352,6 @@ public interface WindowManagerPolicy {
 
         /**
          * Author: Onskreen
-         * Date: 15/04/2011
-         *
-         * Newly added method to WindowManagerPolicy.WindowState.
-         * Returns true if the WindowState will be obstructed by the soft keyboard
-         * due to it's position on the screen
-         */
-        public boolean isObstructedByKeyboard();
-
-        /**
-         * Author: Onskreen
          * Date: 26/05/2011
          *
          * Newly added method to WindowManagerPolicy.WindowState.

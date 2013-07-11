@@ -1289,6 +1289,7 @@ public class PhoneWindowManager implements WindowManagerPolicy {
     }
 
     public void adjustWindowParamsLw(WindowManager.LayoutParams attrs) {
+        attrs.flags |= WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL;
         switch (attrs.type) {
             case TYPE_SYSTEM_OVERLAY:
             case TYPE_SECURE_SYSTEM_OVERLAY:
@@ -1298,6 +1299,19 @@ public class PhoneWindowManager implements WindowManagerPolicy {
                         | WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE;
                 attrs.flags &= ~WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH;
                 break;
+                
+            case TYPE_APPLICATION_ATTACHED_DIALOG:
+            case TYPE_KEYGUARD_DIALOG:
+            case TYPE_SYSTEM_ERROR:
+            case TYPE_SYSTEM_ALERT:
+            case TYPE_SYSTEM_DIALOG:
+                attrs.flags &= ~WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL;
+                break;
+        }
+        if (((attrs.flags | WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM) != 0)
+               && ((attrs.flags | WindowManager.LayoutParams.FLAG_DIM_BEHIND) != 0)
+               && (attrs.type == WindowManager.LayoutParams.TYPE_APPLICATION)){
+            attrs.flags &= ~WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL;
         }
 
         /**
@@ -1561,6 +1575,13 @@ public class PhoneWindowManager implements WindowManagerPolicy {
             }
 
             Window win = PolicyManager.makeNewWindow(context);
+            int stackId = -1;
+            try{
+                stackId = ActivityManagerNative.getDefault().getActivityStackIdByToken(appToken);
+                win.setStackId(stackId);
+            } catch (RemoteException e) {
+                Log.e(TAG, e.toString());
+            }
             final TypedArray ta = win.getWindowStyle();
             if (ta.getBoolean(
                         com.android.internal.R.styleable.Window_windowDisablePreview, false)
@@ -2865,12 +2886,14 @@ public class PhoneWindowManager implements WindowManagerPolicy {
                     pf.right = df.right = cf.right = mUnrestrictedScreenLeft+mUnrestrictedScreenWidth;
                     pf.bottom = df.bottom = cf.bottom
                             = mUnrestrictedScreenTop+mUnrestrictedScreenHeight;
+                    setWindowInFrame(win, attrs, pf, df, cf, vf);
                 } else {
                     pf.left = df.left = cf.left = mRestrictedScreenLeft;
                     pf.top = df.top = cf.top = mRestrictedScreenTop;
                     pf.right = df.right = cf.right = mRestrictedScreenLeft+mRestrictedScreenWidth;
                     pf.bottom = df.bottom = cf.bottom
                             = mRestrictedScreenTop+mRestrictedScreenHeight;
+                    setWindowInFrame(win, attrs, pf, df, cf, vf);
                 }
 
                 applyStableConstraints(sysUiFl, fl, cf);
@@ -3112,9 +3135,9 @@ public class PhoneWindowManager implements WindowManagerPolicy {
                     } else if (mWindowsShifted.contains(win)) {
                         if (DEBUG_LAYOUT) Log.v(TAG, "\tAction: Shift down " + mWindowShiftAmount + " pixels");
                         mWindowsShifted.remove(win);
-                        int modifiedTop = pf.top + mWindowShiftAmount;
-                        pf.top = df.top = cf.top = vf.top = modifiedTop;
-                        vf.bottom = cf.bottom = pf.bottom = df.bottom = desiredRect.bottom + modifiedTop;
+                        pf.top = df.top = cf.top = vf.top = desiredRect.top + mWindowShiftAmount;
+                        vf.bottom = cf.bottom = desiredRect.bottom+ mWindowShiftAmount;
+                        pf.bottom = df.bottom = desiredRect.bottom+ mWindowShiftAmount;
                     } else {
                         WindowState w = (WindowState) mWindowsShifted.get(0);
                         if(w != null) {
@@ -3176,8 +3199,7 @@ public class PhoneWindowManager implements WindowManagerPolicy {
          * unduly obstructed by the presence of the keyboard are also manipulated regardless
          * of the flag.
          */
-       if(((attrs.softInputMode & SOFT_INPUT_MASK_ADJUST) == SOFT_INPUT_ADJUST_RESIZE) ||
-               win.isObstructedByKeyboard()) {
+       if((attrs.softInputMode & SOFT_INPUT_MASK_ADJUST) == SOFT_INPUT_ADJUST_RESIZE) {
            //Indicates the V Keyboard is on the screen, if mContentBottom has been reset
            //and our desired rect will overlap it
 //           if(desiredRect.bottom > mContentBottom) {
@@ -3189,19 +3211,21 @@ public class PhoneWindowManager implements WindowManagerPolicy {
                    if (DEBUG_LAYOUT) Log.v(TAG, "\tAction: Ignore, win is not visible anyway");
                    cf.bottom = desiredRect.bottom;
                    vf.bottom = desiredRect.bottom;
-               } else if(win.isObstructedByKeyboard()) {
+               } else if(desiredRect.bottom - desiredRect.height() > mCurTop) {
                    //Try to shift the window up on the screen to be fully visible
-
                    //Window already shifted
                    if(mWindowsShifted.contains(win)) {
-                       if (DEBUG_LAYOUT) Log.v(TAG, "\tAction: Win already shifted");
+                       if (DEBUG_LAYOUT) Log.v(TAG, "\tAction: Cornerstone Win already shifted");
                        /**
                         * This is a sanity check. We have seen cases where the Window is determined to be resized (or is new) triggering
                         * a relayout of it from the WMS. In that case it is positioned in the unaltered frame and the Policy needs
                         * to make sure it is positioned appropriately based on obstruction.
                         */
                        if(pf.bottom!=mContentBottom) {
+                           int wsa = mWindowShiftAmount;
+                           mWindowShiftAmount = desiredRect.bottom - mContentBottom;
                            int modifiedTop = desiredRect.top - mWindowShiftAmount;
+                           mWindowShiftAmount += wsa;
                            /**
                             * Author: Onskreen
                             * Date: 23/01/2013
@@ -3212,10 +3236,8 @@ public class PhoneWindowManager implements WindowManagerPolicy {
                             * area in landscape mode and Window size of app goes out of layout
                             * rect in portrait mode.
                             */
-                           if(modifiedTop < 0) { // In landscape mode
-								modifiedTop = desiredRect.top;
-                           } else if(modifiedTop < desiredRect.top) { // In portrait mode
-								modifiedTop = desiredRect.top;
+                           if(modifiedTop < 0) { // this will fail
+								modifiedTop = mCurTop;
                            }
 
                            pf.top = df.top = cf.top = vf.top = modifiedTop;
@@ -3225,33 +3247,13 @@ public class PhoneWindowManager implements WindowManagerPolicy {
                        }
                    } else {
                        mWindowShiftAmount = desiredRect.bottom - mContentBottom;
-                       if (DEBUG_LAYOUT) Log.v(TAG, "\tAction: Shift up " + mWindowShiftAmount + " pixels");
-                       /*
-                        * Author: Onskreen
-                        * Date: 12/12/2012
-                        *
-                        * Sometimes Framework wrongly calculates the virtual keyboard
-                        * rect in WindowState.computeFrameLw() and mContentBottom,
-                        * mCurBottom variables initialized with wrong values in
-                        * offsetInputMethodWindowLw method. The height of virtual keyboard
-                        * in landscape orientation is apprx. 342 pixels and in portrait mode it is
-                        * apprx. 288 pixels. If mWindowShiftAmount variable has any value lesser
-                        * than 280 pixels considered as incorrect rect of virtual keyboard window
-                        * and CS Panel app shouldn't be shifted to incorrect position on
-                        * screen in either orientations.
-                        */
-                       if(mWindowShiftAmount < 280) {
-							pf.top = df.top = cf.top = vf.top = desiredRect.top;
-							vf.bottom = cf.bottom = desiredRect.bottom;
-							pf.bottom = df.bottom = desiredRect.bottom;
-                       } else {
-                           mWindowsShifted.add(win);
-                           int modifiedTop = desiredRect.top - mWindowShiftAmount;
-                           pf.top = df.top = cf.top = vf.top = modifiedTop;
-                           pf.bottom = df.bottom = mContentBottom;
-                           cf.bottom = mContentBottom;
-                           vf.bottom = mCurBottom;
-                       }
+                       if (DEBUG_LAYOUT) Log.v(TAG, "\tAction: Coirnerstone Shift up " + mWindowShiftAmount + " pixels. mContentBottom " + mContentBottom);
+                       mWindowsShifted.add(win);
+                       int modifiedTop = desiredRect.top - mWindowShiftAmount;
+                       pf.top = df.top = cf.top = vf.top = modifiedTop;
+                       pf.bottom = df.bottom = mContentBottom;
+                       cf.bottom = mContentBottom;
+                       vf.bottom = mCurBottom;
                    }
                } else {
                    //Squeeze the window in the visible area above the keyboard

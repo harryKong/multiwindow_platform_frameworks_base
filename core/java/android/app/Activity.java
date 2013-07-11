@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2006 The Android Open Source Project
+ * Copyright (C) 2013 Tieto Poland Sp. z o.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +20,8 @@ package android.app;
 import com.android.internal.app.ActionBarImpl;
 import com.android.internal.policy.PolicyManager;
 
+import android.app.ActivityManagerNative;
+import android.app.ICornerstoneManager;
 import android.content.ComponentCallbacks2;
 import android.content.ComponentName;
 import android.content.ContentResolver;
@@ -45,6 +48,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
+import android.os.Message;
 import android.os.Parcelable;
 import android.os.RemoteException;
 import android.os.StrictMode;
@@ -758,6 +762,19 @@ public class Activity extends ContextThemeWrapper
     private Thread mUiThread;
     final Handler mHandler = new Handler();
 
+    private final ICornerstoneManager.Stub mBinder = new ICornerstoneManager.Stub() {
+        public void onCornerstonePanelFocusChanged(String pkgName, boolean focus, final int index){
+
+            Runnable thr = new Runnable() {
+                @Override
+                public void run() {
+                    mWindow.onWindowFocusChanged(index);
+                }
+            };
+            mHandler.post(thr);
+        }
+    };
+
     /** Return the intent that started this activity. */
     public Intent getIntent() {
         return mIntent;
@@ -1432,6 +1449,12 @@ public class Activity extends ContextThemeWrapper
         }
 
         getApplication().dispatchActivityDestroyed(this);
+
+        try{
+            ActivityManagerNative.getDefault().unsetCornerstoneManager(mBinder);
+        } catch (RemoteException e){
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -5058,9 +5081,24 @@ public class Activity extends ContextThemeWrapper
             Configuration config) {
         attachBaseContext(context);
 
+        try{
+            ActivityManagerNative.getDefault().setCornerstoneManager(mBinder);
+        } catch (RemoteException e){
+            e.printStackTrace();
+        }
+
         mFragments.attachActivity(this, mContainer, null);
         
         mWindow = PolicyManager.makeNewWindow(this);
+
+        int stackId = -1;
+        try{
+            stackId = ActivityManagerNative.getDefault().getActivityStackIdByToken(token);
+            mWindow.setStackId(stackId);
+        } catch (RemoteException e) {
+            Log.e(TAG, e.toString());
+        }
+
         mWindow.setCallback(this);
         mWindow.getLayoutInflater().setPrivateFactory(this);
         if (info.softInputMode != WindowManager.LayoutParams.SOFT_INPUT_STATE_UNSPECIFIED) {

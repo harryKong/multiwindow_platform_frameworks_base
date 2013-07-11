@@ -29,6 +29,7 @@ import android.content.pm.IPackageDataObserver;
 import android.content.pm.UserInfo;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
+import android.graphics.Rect;
 import android.net.Uri;
 import android.os.Binder;
 import android.os.Bundle;
@@ -1878,6 +1879,15 @@ public abstract class ActivityManagerNative extends Binder implements IActivityM
             return true;
         }
 
+        case CORNERSTONE_MANAGER_UNSET_TRANSACTION: {
+            data.enforceInterface(IActivityManager.descriptor);
+            ICornerstoneManager manager = ICornerstoneManager.Stub.asInterface(
+            data.readStrongBinder());
+            unsetCornerstoneManager(manager);
+            reply.writeNoException();
+            return true;
+        }
+
         /**
          * Author: Onskreen
          * Date: 08/03/2011
@@ -1907,6 +1917,96 @@ public abstract class ActivityManagerNative extends Binder implements IActivityM
             return true;
         }
 
+        case INIT_WINDOW_CORNERSTONE_TRANSACTION: {
+            data.enforceInterface(IActivityManager.descriptor);
+            Rect r = new Rect();
+            r.readFromParcel(data);
+            int ret = initWindow(r);
+            reply.writeNoException();
+            reply.writeInt(ret);
+            return true;
+        }
+
+        case REMOVE_WINDOW_CORNERSTONE_TRANSACTION: {
+            data.enforceInterface(IActivityManager.descriptor);
+            int stackId = data.readInt();
+            removeWindow(stackId);
+            reply.writeNoException();
+            return true;
+        }
+
+        case RELAYOUT_WINDOW_CORNERSTONE_TRANSACTION: {
+            data.enforceInterface(IActivityManager.descriptor);
+            int stackId = data.readInt();
+            Rect r = new Rect();
+            r.readFromParcel(data);
+            boolean[] ret = new boolean[1];
+            ret[0] = relayoutWindow(stackId, r);
+            reply.writeNoException();
+            reply.writeBooleanArray(ret);
+            return true;
+        }
+
+        case RELAYOUT_WINDOW_CALLBACK_CORNERSTONE_TRANSACTION: {
+            data.enforceInterface(IActivityManager.descriptor);
+            int stackId = data.readInt();
+            Rect r = new Rect();
+            r.readFromParcel(data);
+            relayoutWindowCallback(stackId, r);
+            reply.writeNoException();
+            return true;
+        }
+
+        case GET_MAIN_WINDOW_STACK_ID_CORNERSTONE_TRANSACTION: {
+            data.enforceInterface(IActivityManager.descriptor);
+            int stackId  = getMainWindowStackId();
+            reply.writeNoException();
+            reply.writeInt(stackId);
+            return true;
+        }
+
+        case GET_CORNERSTONE_WINDOW_STACK_ID_CORNERSTONE_TRANSACTION: {
+            data.enforceInterface(IActivityManager.descriptor);
+            int stackId  = getCornerstoneWindowStackId();
+            reply.writeNoException();
+            reply.writeInt(stackId);
+            return true;
+        }
+
+        case GET_ACTIVITY_STACK_ID_BY_TOKEN_CORNERSTONE_TRANSACTION: {
+            data.enforceInterface(IActivityManager.descriptor);
+            IBinder binder = data.readStrongBinder();
+            int stackId  = getActivityStackIdByToken(binder);
+            reply.writeNoException();
+            reply.writeInt(stackId);
+            return true;
+        }
+
+        case GET_STACK_INFO_TRANSACTION: {
+            data.enforceInterface(IActivityManager.descriptor);
+            int stackId = data.readInt();
+            ActivityStackInfo stackInfo = getStackInfo(stackId);
+            reply.writeNoException();
+            stackInfo.writeToParcel(reply, 0);
+            return true;
+        }
+
+        case SET_MULTIWINDOW_MANAGER_TRANSACTION: {
+            data.enforceInterface(IActivityManager.descriptor);
+            IMultiwindowManager manager = IMultiwindowManager.Stub.asInterface(
+            data.readStrongBinder());
+            setMultiwindowManager(manager);
+            reply.writeNoException();
+            return true;
+        }
+
+        case SET_MULTIWINDOW_RELAYOUT_RESTRICTION_TRASNSACTION: {
+            data.enforceInterface(IActivityManager.descriptor);
+            boolean arg[] = new boolean[1];
+            data.readBooleanArray(arg);
+            setMultiwindowRelayoutRestriction(arg[0]);
+            reply.writeNoException();
+        }
         }
 
         return super.onTransact(code, data, reply, flags);
@@ -4289,6 +4389,17 @@ class ActivityManagerProxy implements IActivityManager
         reply.recycle();
     }
 
+    public void unsetCornerstoneManager(ICornerstoneManager manager) throws RemoteException {
+        Parcel data = Parcel.obtain();
+        Parcel reply = Parcel.obtain();
+        data.writeInterfaceToken(IActivityManager.descriptor);
+        data.writeStrongBinder(manager != null ? manager.asBinder() : null);
+        mRemote.transact(CORNERSTONE_MANAGER_UNSET_TRANSACTION, data, reply, 0);
+        reply.readException();
+        data.recycle();
+        reply.recycle();
+    }
+
     /**
      * Author: Onskreen
      * Date: 28/02/2011
@@ -4338,6 +4449,139 @@ class ActivityManagerProxy implements IActivityManager
         data.writeInterfaceToken(IActivityManager.descriptor);
         data.writeInt(panelIndex);
         mRemote.transact(SET_CORNERSTONE_FOCUSED_APP_TRANSACTION, data, reply, 0);
+        reply.readException();
+        data.recycle();
+        reply.recycle();
+    }
+
+    public int initWindow(Rect r) throws RemoteException {
+        Parcel data = Parcel.obtain();
+        Parcel reply = Parcel.obtain();
+        data.writeInterfaceToken(IActivityManager.descriptor);
+        int flags = 0;
+        r.writeToParcel(data, flags);
+        mRemote.transact(INIT_WINDOW_CORNERSTONE_TRANSACTION, data, reply, 0);
+        reply.readException();
+        int ret = reply.readInt();
+        data.recycle();
+        reply.recycle();
+        return ret;
+    }
+
+    public void removeWindow(int stackId) throws RemoteException {
+        Parcel data = Parcel.obtain();
+        Parcel reply = Parcel.obtain();
+        data.writeInterfaceToken(IActivityManager.descriptor);
+        data.writeInt(stackId);
+        mRemote.transact(REMOVE_WINDOW_CORNERSTONE_TRANSACTION, data, reply, 0);
+        reply.readException();
+        data.recycle();
+        reply.recycle();
+    }
+
+    public boolean relayoutWindow(int stackId, Rect r) throws RemoteException {
+        Parcel data = Parcel.obtain();
+        Parcel reply = Parcel.obtain();
+        data.writeInterfaceToken(IActivityManager.descriptor);
+        data.writeInt(stackId);
+        int flags = 0;
+        r.writeToParcel(data, flags);
+        mRemote.transact(RELAYOUT_WINDOW_CORNERSTONE_TRANSACTION, data, reply, 0);
+        reply.readException();
+        boolean[] ret = new boolean[1]; 
+        reply.readBooleanArray(ret);
+        data.recycle();
+        reply.recycle();
+        return ret[0];
+    }
+
+    public void relayoutWindowCallback(int stackId, Rect r) throws RemoteException {
+        Parcel data = Parcel.obtain();
+        Parcel reply = Parcel.obtain();
+        data.writeInterfaceToken(IActivityManager.descriptor);
+        data.writeInt(stackId);
+        int flags = 0;
+        r.writeToParcel(data, flags);
+        mRemote.transact(RELAYOUT_WINDOW_CALLBACK_CORNERSTONE_TRANSACTION, data, reply, 0);
+        reply.readException();
+        data.recycle();
+        reply.recycle();
+    }
+
+    public int getMainWindowStackId() throws RemoteException {
+        Parcel data = Parcel.obtain();
+        Parcel reply = Parcel.obtain();
+        data.writeInterfaceToken(IActivityManager.descriptor);
+        mRemote.transact(GET_MAIN_WINDOW_STACK_ID_CORNERSTONE_TRANSACTION, data, reply, 0);
+        reply.readException();
+        int ret = reply.readInt();
+        data.recycle();
+        reply.recycle();
+        return ret;
+    }
+
+    public int getCornerstoneWindowStackId() throws RemoteException {
+        Parcel data = Parcel.obtain();
+        Parcel reply = Parcel.obtain();
+        data.writeInterfaceToken(IActivityManager.descriptor);
+        mRemote.transact(GET_CORNERSTONE_WINDOW_STACK_ID_CORNERSTONE_TRANSACTION, data, reply, 0);
+        reply.readException();
+        int ret = reply.readInt();
+        data.recycle();
+        reply.recycle();
+        return ret;
+    }
+
+    public int getActivityStackIdByToken(IBinder binder) throws RemoteException {
+        Parcel data = Parcel.obtain();
+        Parcel reply = Parcel.obtain();
+        data.writeInterfaceToken(IActivityManager.descriptor);
+        data.writeStrongBinder(binder);
+        mRemote.transact(GET_ACTIVITY_STACK_ID_BY_TOKEN_CORNERSTONE_TRANSACTION, data, reply, 0);
+        reply.readException();
+        int ret = reply.readInt();
+        data.recycle();
+        reply.recycle();
+        return ret;
+    }
+
+
+    @Override
+    public ActivityStackInfo getStackInfo(int stackId) throws RemoteException {
+        Parcel data = Parcel.obtain();
+        Parcel reply = Parcel.obtain();
+        data.writeInterfaceToken(IActivityManager.descriptor);
+        data.writeInt(stackId);
+        mRemote.transact(GET_STACK_INFO_TRANSACTION, data, reply, 0);
+        reply.readException();
+        ActivityStackInfo stackInfo = ActivityStackInfo.CREATOR.createFromParcel(reply);
+        reply.recycle();
+        data.recycle();
+        return stackInfo;
+
+    }
+
+    @Override
+    public void setMultiwindowManager(IMultiwindowManager manager) throws RemoteException {
+        Parcel data = Parcel.obtain();
+        Parcel reply = Parcel.obtain();
+        data.writeInterfaceToken(IActivityManager.descriptor);
+        data.writeStrongBinder(manager != null ? manager.asBinder() : null);
+        mRemote.transact(SET_MULTIWINDOW_MANAGER_TRANSACTION, data, reply, 0);
+        reply.readException();
+        data.recycle();
+        reply.recycle();
+    }
+
+    @Override
+    public void setMultiwindowRelayoutRestriction(boolean restrict) throws RemoteException {
+        Parcel data = Parcel.obtain();
+        Parcel reply = Parcel.obtain();
+        boolean arg[] = new boolean[1];
+        arg[0] = restrict;
+        data.writeInterfaceToken(IActivityManager.descriptor);
+        data.writeBooleanArray(arg);
+        mRemote.transact(SET_MULTIWINDOW_RELAYOUT_RESTRICTION_TRASNSACTION, data, reply, 0);
         reply.readException();
         data.recycle();
         reply.recycle();

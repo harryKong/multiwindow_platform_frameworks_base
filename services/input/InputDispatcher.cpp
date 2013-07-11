@@ -1228,14 +1228,15 @@ int32_t InputDispatcher::findTouchedWindowTargetsLocked(nsecs_t currentTime,
         sp<InputWindowHandle> newTouchedWindowHandle;
         sp<InputWindowHandle> topErrorWindowHandle;
         bool isTouchModal = false;
-	String8 subStr;
-	bool isNonApp = false;
 
         // Traverse windows from front to back to find touched window and outside targets.
         size_t numWindows = mWindowHandles.size();
         for (size_t i = 0; i < numWindows; i++) {
             sp<InputWindowHandle> windowHandle = mWindowHandles.itemAt(i);
             const InputWindowInfo* windowInfo = windowHandle->getInfo();
+#if DEBUG_USER_INPUT
+		ALOGD("window is: %s", windowInfo->name.string());
+#endif
             if (windowInfo->displayId != displayId) {
                 continue; // wrong display
             }
@@ -1265,16 +1266,8 @@ int32_t InputDispatcher::findTouchedWindowTargetsLocked(nsecs_t currentTime,
 			ALOGD("Window.frameBottom-> %d", windowInfo->frameBottom);
 			ALOGD("Window->isTouchModal %d", isTouchModal);
 			ALOGD("window->touchableAreaContainsPoint(x, y) %d", windowInfo->touchableRegionContainsPoint(x, y));
+			ALOGD("FLAG_NOT_FOCUSABLE: %d, FLAG_NOT_TOUCH_MODAL: %d", (flags & (InputWindowInfo::FLAG_NOT_FOCUSABLE)) != 0, (flags & InputWindowInfo::FLAG_NOT_TOUCH_MODAL) != 0 );
 			#endif
-
-			subStr = getNonAppSubStr(windowInfo->name.string());
-			#if DEBUG_USER_INPUT
-			ALOGD("Non app sub string is: %s", subStr.string());
-			#endif
-
-			if(subStr == "StatusBar" || subStr == "StatusBarExpanded" || subStr == "InputMethod" /*|| subStr == "SystemBar"*/){
-				isNonApp = true;
-			}
             /**
              * Author: Onskreen
              * Date: 29/02/2012
@@ -1285,9 +1278,7 @@ int32_t InputDispatcher::findTouchedWindowTargetsLocked(nsecs_t currentTime,
              * and that is in its touchable region, then input should be passed
              * to it.
              */
-             bool isTouched = windowInfo->touchableRegionContainsPoint(x, y);
-             if ((isTouchModal && isTouched) || (!isNonApp && isTouched) || (isNonApp && isTouched)) {
-                    //if (isTouchModal || windowInfo->touchableRegionContainsPoint(x, y)) {
+                    if (isTouchModal || windowInfo->touchableRegionContainsPoint(x, y)) {
                         if (! screenWasOff
                                 || (flags & InputWindowInfo::FLAG_TOUCHABLE_WHEN_WAKING)) {
                             newTouchedWindowHandle = windowHandle;
@@ -2987,66 +2978,6 @@ void InputDispatcher::setFocusedApplication(
 
     // Wake up poll loop since it may need to make new input dispatching choices.
     mLooper->wake();
-}
-
-/**
- * Author: Onskreen
- * Date: 17/02/2011
- *
- * Finds the focused application/activity and sets the found Application
- * to the top element of mApplications array ensuring mApplications array
- * is always up to date.
- */
-/*const InputApplication* InputDispatcher::findFocusedApp(const char* src) {
-    const InputApplication* app = NULL;
-    const char* str = NULL;
-    size_t len = mApplications.size();
-    for(size_t j = 0; j < len; j++){
-		app = & mApplications.editItemAt(j);
-		str = app->name.string();
-		str = strstr(str, src);
-		if(str != NULL){
-			//found, assign the new focused application
-			mApplications.add(*app);
-			size_t index = mApplications.removeAt(j);
-			app = & mApplications.editItemAt(len - 1);
-			break;
-		} else {
-			app = NULL;
-		}
-    }
-    return app;
-}*/
-
-/**
- * Author: Onskreen
- * Date: 17/02/2011
- *
- * Utility function returning the sub string from InputWindow.name string.
- */
-String8 InputDispatcher::getSubStr(const char* src) {
-    String8 subStr;
-    char* str1;
-    str1 = strchr(src, ' ');
-    str1 = strtok(str1, "/");
-    subStr.append(str1);
-    return subStr;
-}
-
-/**
- * Author: Onskreen
- * Date: 18/02/2011
- *
- * Utility function returning the sub string from non-app (dialogs, virtual keyboard, statusbar etc.)
- * InputWindow.name string.
- */
-String8 InputDispatcher::getNonAppSubStr(const char* src) {
-    String8 subStr;
-    char* str1;
-    str1 = strchr(src, ' ');
-    str1 = strtok(str1, " ");
-    subStr.append(str1);
-    return subStr;
 }
 
 void InputDispatcher::setInputDispatchMode(bool enabled, bool frozen) {

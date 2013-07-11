@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
 /* Copyright 2012, The Android Open Source Project
+** Copyright (C) 2013 Tieto Poland Sp. z o.o.
 **
 ** Licensed under the Apache License, Version 2.0 (the "License");
 ** you may not use this file except in compliance with the License.
@@ -164,6 +165,9 @@
   <java-symbol type="id" name="skip_button" />
   <java-symbol type="id" name="slider_group" />
   <java-symbol type="id" name="split_action_bar" />
+  <java-symbol type="id" name="mwCloseBtn" />
+  <java-symbol type="id" name="mwSwapBtn" />
+  <java-symbol type="id" name="mwLaunchBtn" />
   <java-symbol type="id" name="stream_icon" />
   <java-symbol type="id" name="submit_area" />
   <java-symbol type="id" name="switch_new" />
@@ -218,6 +222,8 @@
   <java-symbol type="id" name="sms_short_code_remember_choice_checkbox" />
   <java-symbol type="id" name="sms_short_code_remember_undo_instruction" />
   <java-symbol type="id" name="breadcrumb_section" />
+  <java-symbol type="id" name="mw_decor_title" />
+  <java-symbol type="id" name="mw_decor_header" />
 
   <java-symbol type="attr" name="actionModeShareDrawable" />
   <java-symbol type="attr" name="alertDialogCenterButtons" />
@@ -862,6 +868,8 @@
   <java-symbol type="string" name="media_route_status_available" />
   <java-symbol type="string" name="media_route_status_not_available" />
   <java-symbol type="string" name="owner_name" />
+  <java-symbol type="string" name="mw_launcher_class" />
+  <java-symbol type="string" name="mw_app_package" />
 
   <java-symbol type="plurals" name="abbrev_in_num_days" />
   <java-symbol type="plurals" name="abbrev_in_num_hours" />
@@ -1131,7 +1139,6 @@
   <java-symbol type="xml" name="kg_password_kbd_numeric" />
   <java-symbol type="xml" name="power_profile" />
   <java-symbol type="xml" name="time_zones_by_country" />
-  <java-symbol type="xml" name="cornerstone" />
   <java-symbol type="xml" name="sms_short_codes" />
 
   <java-symbol type="raw" name="accessibility_gestures" />
@@ -1267,6 +1274,14 @@
   <java-symbol type="drawable" name="menu_background" />
   <java-symbol type="drawable" name="stat_sys_secure" />
   <java-symbol type="drawable" name="kg_widget_bg_padded" />
+  <java-symbol type="drawable" name="mw_content_remove_click" />
+  <java-symbol type="drawable" name="mw_full_screen_click" />
+  <java-symbol type="drawable" name="mw_collections_view_as_grid_click" />
+  <java-symbol type="drawable" name="mw_app_header_focused" />
+  <java-symbol type="drawable" name="mw_content_remove" />
+  <java-symbol type="drawable" name="mw_full_screen" />
+  <java-symbol type="drawable" name="mw_collections_view_as_grid" />
+  <java-symbol type="drawable" name="mw_app_header_unfocused" />
   <java-symbol type="id" name="action_mode_bar_stub" />
   <java-symbol type="id" name="alarm_status" />
   <java-symbol type="id" name="backspace" />
@@ -1402,6 +1417,7 @@
   <java-symbol type="layout" name="keyguard_host_view" />
   <java-symbol type="layout" name="keyguard_transport_control_view" />
   <java-symbol type="layout" name="keyguard_status_view" />
+  <java-symbol type="layout" name="mw_decor" />
   <java-symbol type="string" name="abbrev_wday_month_day_no_year" />
   <java-symbol type="string" name="android_upgrading_title" />
   <java-symbol type="string" name="bugreport_title" />
@@ -1515,14 +1531,6 @@
   <java-symbol type="anim" name="screen_user_exit" />
   <java-symbol type="anim" name="screen_user_enter" />
   <java-symbol type="anim" name="window_move_from_decor" />
-  <java-symbol type="anim" name="activity_close_enter_reverse" />
-  <java-symbol type="anim" name="activity_close_exit_reverse" />
-  <java-symbol type="anim" name="activity_open_enter_reverse" />
-  <java-symbol type="anim" name="activity_open_exit_reverse" />
-  <java-symbol type="anim" name="task_close_enter_reverse" />
-  <java-symbol type="anim" name="task_close_exit_reverse" />
-  <java-symbol type="anim" name="task_open_enter_reverse" />
-  <java-symbol type="anim" name="task_open_exit_reverse" />
   <java-symbol type="array" name="config_autoBrightnessButtonBacklightValues" />
   <java-symbol type="array" name="config_autoBrightnessKeyboardBacklightValues" />
   <java-symbol type="array" name="config_autoBrightnessLcdBacklightValues" />

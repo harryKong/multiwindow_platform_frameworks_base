@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2006 The Android Open Source Project
+ * Copyright (C) 2013 Tieto Poland Sp. z o.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +17,7 @@
 
 package android.view;
 
+import android.app.ActivityManagerNative;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.content.res.TypedArray;
@@ -151,6 +153,9 @@ public abstract class Window {
     private boolean mHasSoftInputMode = false;
     
     private boolean mDestroyed;
+
+    private int mStackId = 0;
+    private boolean mIsMwPanel = false;
 
     // The current window attributes.
     private final WindowManager.LayoutParams mWindowAttributes =
@@ -1256,4 +1261,25 @@ public abstract class Window {
      * @param mask Flags specifying which options should be modified. Others will remain unchanged.
      */
     public void setUiOptions(int uiOptions, int mask) { }
+
+    public void setStackId(int stackId) {
+        mStackId = stackId;
+        try{
+            if(ActivityManagerNative.getDefault().getStackInfo(mStackId).isCornerstonePanel())
+                mIsMwPanel = true;
+        }
+        catch(Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    public int getStackId() {
+        return mStackId;
+    }
+
+    public boolean isMwPanel(){
+        return mIsMwPanel;
+    }
+
+    public void onWindowFocusChanged(int stackId){}
 }

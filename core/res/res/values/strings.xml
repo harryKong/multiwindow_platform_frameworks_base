@@ -3,6 +3,7 @@
 /* //device/apps/common/assets/res/any/strings.xml
 **
 ** Copyright 2006, The Android Open Source Project
+** Copyright (C) 2013 Tieto Poland Sp. z. o.o.
 **
 ** Licensed under the Apache License, Version 2.0 (the "License");
 ** you may not use this file except in compliance with the License.
@@ -4004,5 +4005,7 @@
     <string name="user_switched">Current user <xliff:g id="name" example="Bob">%1$s</xliff:g>.</string>
     <!-- Default name of the owner user [CHAR LIMIT=20] -->
     <string name="owner_name" msgid="3879126011135546571">Owner</string>
+    <string name="mw_launcher_class">com.tieto.launcher.TietoLauncher</string>
+    <string name="mw_app_package">com.tieto.multiwindow</string>
 
 </resources>

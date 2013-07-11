@@ -29,8 +29,6 @@ import static com.android.server.wm.WindowManagerService.H.UPDATE_ANIM_PARAMETER
 
 import android.content.Context;
 import android.os.Debug;
-import android.graphics.Rect;
-import android.os.IBinder;
 import android.os.SystemClock;
 import android.util.Log;
 import android.util.Slog;
@@ -45,8 +43,6 @@ import android.view.animation.Animation;
 import com.android.server.wm.WindowManagerService.AppWindowAnimParams;
 import com.android.server.wm.WindowManagerService.LayoutFields;
 import com.android.server.wm.WindowManagerService.LayoutToAnimatorParams;
-
-import com.android.server.wm.WindowManagerService.WindowPanel;
 
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -598,13 +594,28 @@ public class WindowAnimator {
             }
 
             if (windowAnimationBackgroundSurface != null) {
-                windowAnimationBackgroundSurface.show(mDw, mDh,
-                        animLayer - WindowManagerService.LAYER_OFFSET_DIM,
-                        windowAnimationBackgroundColor);
+                /**
+                 * Author: Onskreen
+                 * Date: 11/23/2012
+                 *
+                 * Sets the DimSurface width and height as per panel
+                 * rect's width/height to restrict the DimSurface anim
+                 * by not applying the screen width/height.
+                 */
+                final int dw = win.mFrame.width();//mDw;
+                final int dh = win.mFrame.height();//mDh;
+                windowAnimationBackgroundSurface.mDimX = win.mFrame.left;
+                windowAnimationBackgroundSurface.mDimY = win.mFrame.top;
+                //TODO: comment out, to prevent flickering. It need to be
+                // done in different way
+//                windowAnimationBackgroundSurface.show(dw, dh,
+//                        animLayer - WindowManagerService.LAYER_OFFSET_DIM,
+//                        windowAnimationBackgroundColor);
             }
         } else {
             if (windowAnimationBackgroundSurface != null) {
-                windowAnimationBackgroundSurface.hide();
+            	 //TODO: look up
+//                windowAnimationBackgroundSurface.hide();
             }
         }
     }
