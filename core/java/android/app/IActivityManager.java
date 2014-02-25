@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2006 The Android Open Source Project
+ * Copyright (C) 2014 Tieto Poland Sp. z o.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +37,7 @@ import android.content.pm.ProviderInfo;
 import android.content.pm.UserInfo;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
+import android.graphics.Rect;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Debug;
@@ -510,6 +512,18 @@ public interface IActivityManager extends IInterface {
         }
     }
 
+    /**
+     * Date: Feb 25, 2014
+     * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+     *
+     * Change window position
+     * @param stackID identifies stack (stackbox id
+     * @param r new window position
+     * @return true on success
+     * @throws RemoteException
+     */
+    public boolean relayoutWindow(int stackID, Rect r) throws RemoteException;
+
     String descriptor = "android.app.IActivityManager";
 
     // Please keep these transaction codes the same -- they are also
@@ -694,4 +708,12 @@ public interface IActivityManager extends IInterface {
     int RELEASE_PERSISTABLE_URI_PERMISSION_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+180;
     int GET_PERSISTED_URI_PERMISSIONS_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+181;
     int APP_NOT_RESPONDING_VIA_PROVIDER_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+182;
+
+    /**
+     * Date: Feb 25, 2014
+     * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+     *
+     * Transaction for changing window position
+     */
+    int RELAYOUT_WINDOW_CORNERSTONE_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+183;
 }

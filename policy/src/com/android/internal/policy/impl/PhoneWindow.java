@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2014 Tieto Poland Sp. z o.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,15 +40,19 @@ import com.android.internal.widget.ActionBarContextView;
 import com.android.internal.widget.ActionBarOverlayLayout;
 import com.android.internal.widget.ActionBarView;
 
+import android.app.ActivityManager.StackBoxInfo;
 import android.app.KeyguardManager;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.PixelFormat;
 import android.graphics.Rect;
+import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.media.AudioManager;
 import android.net.Uri;
@@ -80,6 +85,7 @@ import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.View;
+import android.view.View.OnTouchListener;
 import android.view.ViewGroup;
 import android.view.ViewManager;
 import android.view.ViewParent;
@@ -91,14 +97,21 @@ import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityManager;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
+import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.PopupWindow;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.List;
+
+import android.app.ActivityManagerNative;
+import android.view.View.OnClickListener;
 
 /**
  * Android-specific Window.
@@ -127,6 +140,13 @@ public class PhoneWindow extends Window implements MenuBuilder.Callback {
 
     // This is the top-level view of the window, containing the window decor.
     private DecorView mDecor;
+    /**
+     * Date:2013
+     * Copyright (C) 2013 Tieto Poland Sp. z o.o.
+     *
+     * TietoTODO: move decor to FocusedStackFrame
+     */
+    private DecorMWView mDecorMW;
 
     // This is the view in which the window contents are placed. It is either
     // mDecor itself, or a child of mDecor where the contents go.
@@ -2452,6 +2472,10 @@ public class PhoneWindow extends Window implements MenuBuilder.Callback {
         }
 
         public void setWindowBackground(Drawable drawable) {
+            if (mDecorMW != null) {
+                mDecorMW.setBackground(drawable);
+                drawable = new ColorDrawable(Color.TRANSPARENT);
+            }
             if (getBackground() != drawable) {
                 setBackgroundDrawable(drawable);
                 if (drawable != null) {
@@ -2485,6 +2509,13 @@ public class PhoneWindow extends Window implements MenuBuilder.Callback {
 
         @Override
         protected boolean fitSystemWindows(Rect insets) {
+            if (mDecorMW != null) {
+                int of = mDecorMW.getBorderPadding();
+                insets.top += of;
+                insets.left += of;
+                insets.bottom += of;
+                insets.right += of;
+            }
             mFrameOffsets.set(insets);
             updateStatusGuard(insets);
             updateNavigationGuard(insets);
@@ -2798,6 +2829,340 @@ public class PhoneWindow extends Window implements MenuBuilder.Callback {
         }
     }
 
+
+    /**
+     * Date:2013
+     * Copyright (C) 2013 Tieto Poland Sp. z o.o.
+     *
+     * TietoTODO: move to FocusedStackFrame
+     */
+    private class TouchListener implements OnTouchListener {
+
+        private boolean mRelayoutSuccess = false;
+        private Rect mFrame;
+        private Rect mNewFrame;
+        private int mLastX = 0;
+        private int mLastY = 0;
+        private ResizeWindow mResizeWindow;
+        private ImageButton mMaximizeBtn;
+        private View mParentBtn = null;
+        private Rect mFullScreen;
+
+        public TouchListener(ResizeWindow rw, ImageButton maximizeButton, Rect fullScreen) {
+            mResizeWindow = rw;
+            mMaximizeBtn = maximizeButton;
+            mFullScreen = fullScreen;
+        }
+
+        public TouchListener(ResizeWindow rw, ImageButton maximizeButton, View parent, Rect fullScreen) {
+            mResizeWindow = rw;
+            mMaximizeBtn = maximizeButton;
+            mParentBtn = parent;
+            mFullScreen = fullScreen;
+        }
+
+        private boolean fitWindowInScreen(Rect pos) {
+            int w = pos.width() - 50;
+            if (pos.left < (mFullScreen.left - w)) {
+                return false;
+            }
+            if (pos.right > (mFullScreen.right + w)) {
+                return false;
+            }
+            int h = pos.height() - 50;
+            if (pos.bottom > (mFullScreen.bottom + h)) {
+                return false;
+            }
+            if (pos.top < mFullScreen.top) {
+                pos.bottom = mFullScreen.top + pos.height();
+                pos.top = mFullScreen.top;
+            }
+            return true;
+        }
+
+        @Override
+        public boolean onTouch(View v, MotionEvent event) {
+            int rawX = (int) event.getRawX();
+            int rawY = (int) event.getRawY();
+
+            if(MotionEvent.ACTION_DOWN == event.getAction()){
+                mLastX = (int) event.getRawX();
+                mLastY = (int) event.getRawY();
+                mRelayoutSuccess = false;
+                mFrame = new Rect(mDecor.getViewRootImpl().mWinFrame);
+                if (mParentBtn != null) {
+                    mParentBtn.setPressed(true);
+                }
+            }
+            if(MotionEvent.ACTION_MOVE == event.getAction()){
+                try{
+                    int dx = rawX - mLastX;
+                    int dy = rawY - mLastY;
+                    Rect r = mResizeWindow.resize(mFrame, dx, dy);
+                    if (fitWindowInScreen(r)) {
+                        mNewFrame = r;
+                        mRelayoutSuccess = ActivityManagerNative.getDefault().relayoutWindow(getStackBoxId(), mNewFrame);
+                    }
+                }
+                catch (RemoteException e) {
+                    e.printStackTrace();
+                }
+            }
+//            if(MotionEvent.ACTION_UP == event.getAction()){
+//                if (mParentBtn != null) {
+//                    mParentBtn.setPressed(false);
+//                }
+//                try{
+//                    if (mRelayoutSuccess) {
+////                        ActivityManagerNative.getDefault().relayoutWindowCallback(getStackID(), mNewFrame);
+////                        mMaximizeBtn.setImageResource(com.android.internal.R.drawable.mw_btn_maximize);
+//                    }
+//                }
+//                catch (RemoteException e) {
+//                    e.printStackTrace();
+//                }
+//            }
+            if(MotionEvent.ACTION_CANCEL == event.getAction()) {
+                if (mParentBtn != null) {
+                    mParentBtn.setPressed(false);
+                }
+            }
+            return true;
+        }
+    }
+
+    public abstract class ResizeWindow {
+        protected Rect mTmpFrame = new Rect();
+        public abstract Rect resize(Rect frame, int diffX, int diffY);
+    }
+
+    /**
+     * Date:2013
+     * Copyright (C) 2013 Tieto Poland Sp. z o.o.
+     *
+     * TietoTODO: move to FocusedStackFrame
+     */
+    class DecorMWView {
+
+        private LinearLayout mHeader;
+        private ImageButton mCloseBtn;
+        private ImageButton mLaunchBtn;
+        private ImageButton mMaximizeBtn;
+        private View mInnerBorder;
+        private View mOuterBorder;
+        private View mBackground;
+        private View mLeftResize;
+        private View mRightResize;
+
+        private View mDecorView;
+//        private ComponentName mDefaultApp;
+        private int mTopBarHeight;
+        private int mMultiwindowHeight;
+        private int mStatusBarHeight;
+        private int mBorderPadding;
+        private boolean mRemoteConnected = false;
+        private Rect mFullScreen;
+
+        private Rect mOldSize;
+
+        public DecorMWView() {
+            //String cls = getContext().getString(com.android.internal.R.string.mw_launcher_class);
+            //String pkg = cls.substring(0, cls.lastIndexOf("."));
+            //mDefaultApp = new ComponentName(pkg, cls);
+
+            mDecorView = getLayoutInflater().inflate(com.android.internal.R.layout.mw_decor, null);
+
+            mHeader = (LinearLayout)mDecorView.findViewById(com.android.internal.R.id.mw_decor_header);
+            mTopBarHeight = getContext().getResources().getDimensionPixelSize(com.android.internal.R.dimen.mw_inner_border);
+            //mMultiwindowHeight = getContext().getResources().getDimensionPixelSize(android.R.dimen.mw_app_height);
+            mStatusBarHeight = getContext().getResources().getDimensionPixelSize(com.android.internal.R.dimen.status_bar_height);
+            mBorderPadding = mDecorView.getPaddingLeft() + mTopBarHeight;
+            mCloseBtn = (ImageButton)mDecorView.findViewById(com.android.internal.R.id.mwCloseBtn);
+            mLaunchBtn = (ImageButton)mDecorView.findViewById(com.android.internal.R.id.mwLaunchBtn);
+            mMaximizeBtn = (ImageButton)mDecorView.findViewById(com.android.internal.R.id.mwMaximizeBtn);
+            mInnerBorder = mDecorView.findViewById(com.android.internal.R.id.mwInnerBorder);
+            mOuterBorder = mDecorView.findViewById(com.android.internal.R.id.mwOuterBorder);
+            mBackground = mDecorView.findViewById(com.android.internal.R.id.mwBackground);
+            mLeftResize = mDecorView.findViewById(com.android.internal.R.id.mwResizeLeft);
+            mRightResize = mDecorView.findViewById(com.android.internal.R.id.mwResizeRight);
+
+            DisplayMetrics metrics = getContext().getResources().getDisplayMetrics();
+            mFullScreen = new Rect(0, mStatusBarHeight + mMultiwindowHeight, metrics.widthPixels, metrics.heightPixels);
+
+            mHeader.setOnTouchListener(new TouchListener(new ResizeWindow() {
+                @Override
+                public Rect resize(Rect frame, int diffX, int diffY) {
+                    mTmpFrame.left = frame.left + diffX;
+                    mTmpFrame.top = frame.top + diffY;
+                    mTmpFrame.right = frame.right + diffX;
+                    mTmpFrame.bottom = frame.bottom + diffY;
+                    return mTmpFrame;
+                }
+            }, mMaximizeBtn, mFullScreen));
+
+            mLeftResize.setOnTouchListener(new TouchListener(new ResizeWindow() {
+                @Override
+                public Rect resize(Rect frame, int diffX, int diffY) {
+                    mTmpFrame.left = frame.left + diffX;
+                    mTmpFrame.top = frame.top;
+                    mTmpFrame.right = frame.right;
+                    mTmpFrame.bottom = frame.bottom + diffY;
+                    return mTmpFrame;
+                }
+            }, mMaximizeBtn, mLeftResize, mFullScreen));
+
+            mRightResize.setOnTouchListener(new TouchListener(new ResizeWindow() {
+                @Override
+                public Rect resize(Rect frame, int diffX, int diffY) {
+                    mTmpFrame.left = frame.left;
+                    mTmpFrame.top = frame.top;
+                    mTmpFrame.right = frame.right + diffX;
+                    mTmpFrame.bottom = frame.bottom + diffY;
+                    return mTmpFrame;
+                }
+            }, mMaximizeBtn, mRightResize, mFullScreen));
+
+            mCloseBtn.setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View v) {
+//                    try{
+//                        Rect drawingRect = new Rect();
+//                        mDecor.getDrawingRect(drawingRect);
+//                        //ActivityManagerNative.getDefault().relayoutWindow(getStackID(), new Rect( drawingRect.left + 10000, drawingRect.top, drawingRect.right + 10000, drawingRect.bottom));
+//                        //ActivityManagerNative.getDefault().removeWindow(getStackID());
+//                    }
+//                    catch (RemoteException e) {
+//                        e.printStackTrace();
+//                    }
+                }
+            });
+
+            mLaunchBtn.setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View v) {
+//                    Intent intent = new Intent();
+//                    intent.setComponent(mDefaultApp);
+//                    startMultiwindowApp(intent, getStackID());
+                }
+            });
+
+            mMaximizeBtn.setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View v) {
+//                    try{
+//                        Rect newSize = new Rect(mFullScreen);
+//                        Rect actualSize = new Rect(mDecor.getViewRootImpl().mWinFrame);
+//                        boolean maximized = actualSize.equals(newSize);
+//                        if (maximized) {
+//                            //we are maximized, return to previous size
+//                            newSize = mOldSize;
+//                        }
+//                        boolean relayoutSuccessful = ActivityManagerNative.getDefault().relayoutWindow(getStackID(), newSize);
+//                        if (relayoutSuccessful) {
+//                            mOldSize = actualSize;
+//                            mMaximizeBtn.setImageResource(maximized ? com.android.internal.R.drawable.mw_btn_maximize :
+//                                com.android.internal.R.drawable.mw_btn_minimize);
+//                        }
+//                    }
+//                    catch (RemoteException e) {
+//                        e.printStackTrace();
+//                    }
+                }
+            });
+
+//            try {
+//                if (!ActivityManagerNative.getDefault().isTopBarShown()) {
+//                    mRemoteConnected = true;
+//                    mInnerBorder.setAlpha(0f);
+//                }
+//            } catch (RemoteException e) {
+//                e.printStackTrace();
+//            }
+            setFocus();
+        }
+
+        public int getTopBarHeight() {
+            return mTopBarHeight;
+        }
+
+        public int getBorderPadding() {
+            return mBorderPadding;
+        }
+
+        public void startMultiwindowApp(final Intent intent,final int index) {
+            new Thread(new Runnable() {
+                public void run() {
+//                    try {
+//                        ActivityManagerNative.getDefault().startCornerstoneApp(intent, index);
+//                    } catch (RemoteException e) {
+//                        e.printStackTrace();
+//                    }
+                }
+            }).start();
+        }
+
+        public View getView(){
+            return mDecorView;
+        }
+
+        void setFocus(){
+            int tietoBlue = com.android.internal.R.color.mw_blue_decor;
+            mLeftResize.setBackgroundResource(tietoBlue);
+            mRightResize.setBackgroundResource(tietoBlue);
+            mHeader.setBackgroundResource(tietoBlue);
+            if (mRemoteConnected) {
+                mInnerBorder.setBackgroundResource(0);
+                mInnerBorder.setBackgroundColor(Color.TRANSPARENT);
+                mOuterBorder.setBackgroundResource(com.android.internal.R.drawable.mw_outer_border_wide);
+            } else {
+                mInnerBorder.setBackgroundResource(com.android.internal.R.color.mw_transparent_white);
+                mOuterBorder.setBackgroundResource(com.android.internal.R.drawable.mw_outer_border);
+            }
+            mDecorView.invalidate();
+        }
+
+        void unsetFocus() {
+            mLeftResize.setBackgroundResource(0);
+            mRightResize.setBackgroundResource(0);
+            mLeftResize.setBackgroundColor(Color.TRANSPARENT);
+            mRightResize.setBackgroundColor(Color.TRANSPARENT);
+            mHeader.setBackgroundResource(0);
+            mHeader.setBackgroundColor(Color.TRANSPARENT);
+            if (mRemoteConnected) {
+                mInnerBorder.setBackgroundResource(0);
+                mInnerBorder.setBackgroundColor(Color.TRANSPARENT);
+            } else {
+                mInnerBorder.setBackgroundResource(com.android.internal.R.color.mw_transparent_white);
+            }
+            mOuterBorder.setBackgroundResource(com.android.internal.R.drawable.mw_outer_border);
+            mDecorView.invalidate();
+        }
+
+        public void processFocus(int stackID) {
+//            if(stackID == getStackID())
+//                mDecorMW.setFocus();
+//            else
+//                mDecorMW.unsetFocus();
+        }
+
+        public void showTopBar(boolean show) {
+//            ObjectAnimator anim;
+//            mRemoteConnected = !show;
+//            if (show) {
+//                anim = ObjectAnimator.ofFloat(mDecorMW.mInnerBorder, "alpha", 0f, 1f);
+//            } else {
+//                anim = ObjectAnimator.ofFloat(mDecorMW.mInnerBorder, "alpha", 1f, 0f);
+//            }
+//            anim.setDuration(500);
+//            anim.start();
+        }
+
+        public void setBackground(Drawable d) {
+            mBackground.setBackground(d);
+        }
+
+    }
+
     protected ViewGroup generateLayout(DecorView decor) {
         // Apply data from current theme.
 
@@ -3075,6 +3440,16 @@ public class PhoneWindow extends Window implements MenuBuilder.Callback {
     private void installDecor() {
         if (mDecor == null) {
             mDecor = generateDecor();
+            /**
+             * Date:2013
+             * Copyright (C) 2013 Tieto Poland Sp. z o.o.
+             *
+             * TietoTODO: move to FocusedStackFrame
+             */
+            Log.v(TAG, "isMWPanel " + isMWPanel());
+            if(isMWPanel()) {
+                installMWDecor(mDecor);
+            }
             mDecor.setDescendantFocusability(ViewGroup.FOCUS_AFTER_DESCENDANTS);
             mDecor.setIsRootNamespace(true);
             if (!mInvalidatePanelMenuPosted && mInvalidatePanelMenuFeatures != 0) {
@@ -3180,6 +3555,17 @@ public class PhoneWindow extends Window implements MenuBuilder.Callback {
                 }
             }
         }
+    }
+
+    /**
+     * Date:2013
+     * Copyright (C) 2013 Tieto Poland Sp. z o.o.
+     *
+     * TietoTODO: move to FocusedStackFrame
+     */
+    private void installMWDecor(DecorView decor) {
+        mDecorMW = new DecorMWView();
+        decor.addView(mDecorMW.getView());
     }
 
     private Drawable loadImageURI(Uri uri) {
@@ -3888,5 +4274,30 @@ public class PhoneWindow extends Window implements MenuBuilder.Callback {
 
     void sendCloseSystemWindows(String reason) {
         PhoneWindowManager.sendCloseSystemWindows(getContext(), reason);
+    }
+
+    /**
+     * Date:2013
+     * Copyright (C) 2013 Tieto Poland Sp. z o.o.
+     *
+     * TietoTODO: dead code
+     */
+    public void onWindowFocusChanged(int stackID) {
+        if(mDecorMW != null)
+            mDecorMW.processFocus(stackID);
+//        super.onWindowFocusChanged(stackID);
+    }
+
+    /**
+     * Date:2013
+     * Copyright (C) 2013 Tieto Poland Sp. z o.o.
+     *
+     * TietoTODO: dead code
+     */
+    public void onShowTopBar(boolean show) {
+        if (mDecorMW != null) {
+//            Log.v(TAG, "stackId: " + getStackID() + "onShowTopBar " + show);
+            mDecorMW.showTopBar(show);
+        }
     }
 }

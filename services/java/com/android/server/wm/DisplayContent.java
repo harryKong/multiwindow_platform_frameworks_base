@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2012 The Android Open Source Project
+ * Copyright (C) 2014 Tieto Poland Sp. z o.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -112,6 +113,16 @@ class DisplayContent {
     Rect mTmpRect = new Rect();
 
     final WindowManagerService mService;
+
+    /**
+     * Date: Mar 3, 2014
+     * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+     *
+     * TietoTODO: Home stack is stupid situation. Home stack is always on bottom
+     * and thus it cannot receive key input. It need additional variable
+     * which indicates, that home stack get focus. Need to find another way
+     */
+    private boolean mHomeHasFocus = false;
 
     /**
      * @param display May not be null.
@@ -267,6 +278,13 @@ class DisplayContent {
                 throw new IllegalArgumentException("createStack: stackBoxId " + relativeStackBoxId
                         + " not found.");
             }
+            /**
+             * Date: Mar 3, 2014
+             * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+             *
+             * new StackBox, so home should loose focus
+             */
+            mHomeHasFocus = false;
         }
         if (newStack != null) {
             layoutNeeded = true;
@@ -289,9 +307,12 @@ class DisplayContent {
     }
 
     void addStackBox(StackBox box, boolean toTop) {
-        if (mStackBoxes.size() >= 2) {
-            throw new RuntimeException("addStackBox: Too many toplevel StackBoxes!");
-        }
+        /**
+         * Date: Mar 3, 2014
+         * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+         *
+         * Allow creation of unlimited amount of stackboxes
+         */
         mStackBoxes.add(toTop ? mStackBoxes.size() : 0, box);
     }
 
@@ -339,20 +360,27 @@ class DisplayContent {
      * @return true if a change was made, false otherwise.
      */
     boolean moveHomeStackBox(boolean toTop) {
-        if (DEBUG_STACK) Slog.d(TAG, "moveHomeStackBox: toTop=" + toTop + " Callers=" +
-                Debug.getCallers(4));
-        EventLog.writeEvent(EventLogTags.WM_HOME_STACK_MOVED, toTop ? 1 : 0);
-        switch (mStackBoxes.size()) {
-            case 0: throw new RuntimeException("moveHomeStackBox: No home StackBox!");
-            case 1: return false; // Only the home StackBox exists.
-            case 2:
-                if (homeOnTop() ^ toTop) {
-                    mStackBoxes.add(mStackBoxes.remove(0));
-                    return true;
-                }
-                return false;
-            default: throw new RuntimeException("moveHomeStackBox: Too many toplevel StackBoxes!");
-        }
+        /**
+         * Date: Feb 27, 2014
+         * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+         *
+         * TietoTODO: wtf method? what are you doing?
+         */
+        return false;
+//        if (DEBUG_STACK) Slog.d(TAG, "moveHomeStackBox: toTop=" + toTop + " Callers=" +
+//                Debug.getCallers(4));
+//        EventLog.writeEvent(EventLogTags.WM_HOME_STACK_MOVED, toTop ? 1 : 0);
+//        switch (mStackBoxes.size()) {
+//            case 0: throw new RuntimeException("moveHomeStackBox: No home StackBox!");
+//            case 1: return false; // Only the home StackBox exists.
+//            case 2:
+//                if (homeOnTop() ^ toTop) {
+//                    mStackBoxes.add(mStackBoxes.remove(0));
+//                    return true;
+//                }
+//                return false;
+//            default: throw new RuntimeException("moveHomeStackBox: Too many toplevel StackBoxes!");
+//        }
     }
 
     /**
@@ -377,9 +405,77 @@ class DisplayContent {
         return null;
     }
 
+    /**
+     * Date: Feb 27, 2014
+     * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+     *
+     * our glorious relayoutStackBox, stacboxes
+     * inside other stackboxes are not supported. who cares?
+     */
+    boolean relayoutStackBox(int stackBoxId, Rect pos) {
+        for (StackBox sb : mStackBoxes) {
+            if ((sb.getStackId() == stackBoxId) &&
+                 (sb.relayoutStackBox(pos))) {
+                layoutNeeded = true;
+                return true;
+            }
+        }
+        return false;
+    }
+
     int stackIdFromPoint(int x, int y) {
-        StackBox topBox = mStackBoxes.get(mStackBoxes.size() - 1);
-        return topBox.stackIdFromPoint(x, y);
+        /**
+         * Date: Feb 27, 2014
+         * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+         *
+         * Modified for support multiple boxes
+         */
+        int idx = mStackBoxes.size() -1;
+        for (;idx > -1; idx--) {
+            StackBox sb = mStackBoxes.get(idx);
+            int stackId = sb.stackIdFromPoint(x, y);
+            if (stackId != -1) {
+                /**
+                 * Date: Mar 3, 2014
+                 * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+                 *
+                 * get clicked task in stack to top, except home stack. Should
+                 * be always on bottom
+                 */
+                if (stackId != HOME_STACK_ID) {
+                    ArrayList<Task> tasks = sb.mStack.getTasks();
+                    for (Task task : tasks) {
+                        addTask(task, true);
+                    }
+                    mHomeHasFocus = false;
+                    /**
+                     * Date: Mar 3, 2014
+                     * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+                     *
+                     * TietoTODO: multidisplay!!! see inside this method
+                     */
+                    mService.rebuildAppWindowListLocked();
+                    mService.prepareAppTransition(AppTransition.TRANSIT_TASK_TO_FRONT, true);
+                    mService.executeAppTransition();
+                    mStackBoxes.add(mStackBoxes.remove(idx));
+                } else {
+                    mHomeHasFocus = true;
+                }
+                return stackId;
+            }
+        }
+        return -1;
+    }
+
+    /**
+     * Date: Mar 3, 2014
+     * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+     *
+     * check if Home StackBox has focus. needed
+     * for key input. see WMS.findFocusedWindowLocked()
+     */
+    public boolean isHomeFocused() {
+        return mHomeHasFocus;
     }
 
     void setTouchExcludeRegion(TaskStack focusedStack) {

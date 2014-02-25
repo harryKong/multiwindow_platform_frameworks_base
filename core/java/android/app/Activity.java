@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2006 The Android Open Source Project
+ * Copyright (C) 2014 Tieto Poland Sp. z o.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +22,7 @@ import android.util.SuperNotCalledException;
 import com.android.internal.app.ActionBarImpl;
 import com.android.internal.policy.PolicyManager;
 
+import android.app.ActivityManager.StackBoxInfo;
 import android.content.ComponentCallbacks2;
 import android.content.ComponentName;
 import android.content.ContentResolver;
@@ -86,6 +88,7 @@ import java.io.FileDescriptor;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 /**
  * An activity is a single, focused thing that the user can do.  Almost all
@@ -5176,7 +5179,36 @@ public class Activity extends ContextThemeWrapper
         attach(context, aThread, instr, token, 0, application, intent, info, title, parent, id,
             lastNonConfigurationInstances, config);
     }
-    
+
+    /**
+     * Date: Feb 25, 2014
+     * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+     *
+     * TietoTODO: returns stackbox in which app was started.
+     * maybe there is an better way to get stackbox than iterating
+     * through all stackboxes. This cause also one issue with permission:
+     * all apps need to have MANAGE_ACTIVITY_STACKS. Currently this is
+     * turned off in AMS.
+     */
+    private int getStackBoxId() {
+        try {
+            int taskId = getTaskId();
+            List<StackBoxInfo> list = ActivityManagerNative.getDefault().getStackBoxes();
+            for (StackBoxInfo sb : list) {
+                if ((sb.stackBoxId != 0) && (sb.stack != null) && (sb.stack.taskIds != null)) {
+                    for (int i = 0; i < sb.stack.taskIds.length; i++) {
+                        if (taskId == sb.stack.taskIds[i]) {
+                            return sb.stackBoxId;
+                        }
+                    }
+                }
+            }
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
+        return -1;
+    }
+
     final void attach(Context context, ActivityThread aThread,
             Instrumentation instr, IBinder token, int ident,
             Application application, Intent intent, ActivityInfo info,
@@ -5228,6 +5260,13 @@ public class Activity extends ContextThemeWrapper
     }
 
     final void performCreate(Bundle icicle) {
+        /**
+         * Date: Feb 25, 2014
+         * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+         *
+         * set stackbox id in window
+         */
+        mWindow.setStackBoxId(getStackBoxId());
         onCreate(icicle);
         mVisibleFromClient = !mWindow.getWindowStyle().getBoolean(
                 com.android.internal.R.styleable.Window_windowNoDisplay, false);

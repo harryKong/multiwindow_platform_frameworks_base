@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2006 The Android Open Source Project
+ * Copyright (C) 2014 Tieto Poland Sp. z o.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1317,4 +1318,40 @@ public abstract class Window {
      * @param event A key or touch event to inject to this window.
      */
     public void injectInputEvent(InputEvent event) { }
+
+    /**
+     * Date: Feb 25, 2014
+     * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+     *
+     * Stackbox id in which app was started.
+     * Setters and getters
+     */
+    private int mStackBoxId = -1;
+
+    /**
+     * @hide
+     */
+    public void setStackBoxId(int id) {
+        mStackBoxId = id;
+    }
+
+    /**
+     * @hide
+     */
+    public int getStackBoxId() {
+        return mStackBoxId;
+    }
+
+    /**
+     * Date: Feb 25, 2014
+     * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+     *
+     * TietoTODO: this is used to indicate, that window should
+     * have decor frame. Check if FocusedStackFrame can be used
+     * as decor
+     * @hide
+     */
+    public boolean isMWPanel() {
+        return mStackBoxId != -1;
+    }
 }
