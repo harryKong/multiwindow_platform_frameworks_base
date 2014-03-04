@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2006 The Android Open Source Project
+ * Copyright (C) 2014 Tieto Poland Sp. z o.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +32,7 @@ import android.content.pm.ParceledListSlice;
 import android.content.pm.UserInfo;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
+import android.graphics.Rect;
 import android.net.Uri;
 import android.os.Binder;
 import android.os.Bundle;
@@ -2026,6 +2028,24 @@ public abstract class ActivityManagerNative extends Binder implements IActivityM
             data.enforceInterface(IActivityManager.descriptor);
             performIdleMaintenance();
             reply.writeNoException();
+            return true;
+        }
+
+        /**
+         * Date: Feb 25, 2014
+         * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+         *
+         * Change window position
+         */
+        case RELAYOUT_WINDOW_CORNERSTONE_TRANSACTION: {
+            data.enforceInterface(IActivityManager.descriptor);
+            int stackId = data.readInt();
+            Rect r = new Rect();
+            r.readFromParcel(data);
+            boolean[] ret = new boolean[1];
+            ret[0] = relayoutWindow(stackId, r);
+            reply.writeNoException();
+            reply.writeBooleanArray(ret);
             return true;
         }
         }
@@ -4659,6 +4679,29 @@ class ActivityManagerProxy implements IActivityManager
         data.recycle();
         reply.recycle();
     }
+
+    /**
+     * Date: Feb 25, 2014
+     * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+     *
+     * Change window position
+     */
+    public boolean relayoutWindow(int stackID, Rect r) throws RemoteException {
+        Parcel data = Parcel.obtain();
+        Parcel reply = Parcel.obtain();
+        data.writeInterfaceToken(IActivityManager.descriptor);
+        data.writeInt(stackID);
+        int flags = 0;
+        r.writeToParcel(data, flags);
+        mRemote.transact(RELAYOUT_WINDOW_CORNERSTONE_TRANSACTION, data, reply, 0);
+        reply.readException();
+        boolean[] ret = new boolean[1];
+        reply.readBooleanArray(ret);
+        data.recycle();
+        reply.recycle();
+        return ret[0];
+    }
+
 
     private IBinder mRemote;
 }

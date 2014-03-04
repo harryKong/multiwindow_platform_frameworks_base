@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2013 The Android Open Source Project
+ * Copyright (C) 2014 Tieto Poland Sp. z o.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -283,6 +284,15 @@ public class StackBox {
         return true;
     }
 
+    /**
+     * Date: Feb 27, 2014
+     * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+     *
+     * TietoTODO: indicates whether stackbox was relayouted using relayoutWindow.
+     * Is there any better way?
+     */
+    private boolean mCrappyRelayouted = false;
+
     /** If this is a terminal StackBox (contains a TaskStack) set the bounds.
      * @param bounds The rectangle to set the bounds to.
      * @param underStatusBar True if the StackBox is directly below the Status Bar.
@@ -296,8 +306,17 @@ public class StackBox {
         if (mStack != null) {
             change |= !mBounds.equals(bounds);
             if (change) {
-                mBounds.set(bounds);
-                mStack.setBounds(bounds, underStatusBar);
+                /**
+                 * Date: Feb 27, 2014
+                 * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+                 *
+                 * TietoTODO: indicates, that stackbox was relayouted using
+                 * relayoutWindow. is any better way?
+                 */
+                if (!mCrappyRelayouted) {
+                    mBounds.set(bounds);
+                }
+                mStack.setBounds(mBounds, underStatusBar);
             }
         } else {
             mTmpRect.set(bounds);
@@ -320,6 +339,31 @@ public class StackBox {
             }
         }
         return change;
+    }
+
+    /**
+     * Date: Feb 27, 2014
+     * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+     *
+     * Relayouts stackbox
+     */
+    boolean relayoutStackBox(Rect bounds) {
+        mCrappyRelayouted = true;
+        if (mBounds.equals(bounds)) {
+            return false;
+        }
+        mBounds.set(bounds);
+        return true;
+    }
+
+    /**
+     * Date: Feb 27, 2014
+     * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+     *
+     * TietoTODO: indicates that window was relayouted
+     */
+    boolean isCrappyRelayouted() {
+        return mCrappyRelayouted;
     }
 
     void resetAnimationBackgroundAnimator() {

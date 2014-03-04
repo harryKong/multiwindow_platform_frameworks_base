@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2013 The Android Open Source Project
+ * Copyright (C) 2014 Tieto Poland Sp. z o.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,6 +54,7 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.content.res.Configuration;
+import android.graphics.Rect;
 import android.os.Binder;
 import android.os.Bundle;
 import android.os.Debug;
@@ -278,8 +280,14 @@ public final class ActivityStackSupervisor {
     }
 
     void moveHomeToTop() {
-        moveHomeStack(true);
-        mHomeStack.moveHomeTaskToTop();
+        /**
+         * Date: Mar 3, 2014
+         * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+         *
+         * TietoTODO: does it really needed? maybe it's good to remove whole function?
+         */
+        //moveHomeStack(true);
+        //mHomeStack.moveHomeTaskToTop();
     }
 
     boolean resumeHomeActivity(ActivityRecord prev) {
@@ -1273,26 +1281,48 @@ public final class ActivityStackSupervisor {
                 }
                 return taskStack;
             }
+            /**
+             * Date: Feb 27, 2014
+             * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+             *
+             * TietoTODO: adjustStackFocus is used in two cases: when activity is created
+             * with flag Intent.FLAG_ACTIVITY_NEW_TASK and in case, which is marked as it
+             * never should happens. see the end of startActivityUncheckedLocked. Maybe it's
+             * worth to remove this method?
+             */
+//            if (mFocusedStack != null) {
+//                if (DEBUG_FOCUS || DEBUG_STACK) Slog.d(TAG,
+//                        "adjustStackFocus: Have a focused stack=" + mFocusedStack);
+//                return mFocusedStack;
+//            }
 
-            if (mFocusedStack != null) {
-                if (DEBUG_FOCUS || DEBUG_STACK) Slog.d(TAG,
-                        "adjustStackFocus: Have a focused stack=" + mFocusedStack);
-                return mFocusedStack;
-            }
-
-            for (int stackNdx = mStacks.size() - 1; stackNdx > 0; --stackNdx) {
-                ActivityStack stack = mStacks.get(stackNdx);
-                if (!stack.isHomeStack()) {
-                    if (DEBUG_FOCUS || DEBUG_STACK) Slog.d(TAG,
-                            "adjustStackFocus: Setting focused stack=" + stack);
-                    mFocusedStack = stack;
-                    return mFocusedStack;
-                }
-            }
+            /**
+             * Date: Feb 27, 2014
+             * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+             *
+             * TietoTODO: this loop returns first stack which is not a homestack
+             * maybe its worth to remove it?
+             */
+//            for (int stackNdx = mStacks.size() - 1; stackNdx > 0; --stackNdx) {
+//                ActivityStack stack = mStacks.get(stackNdx);
+//                if (!stack.isHomeStack()) {
+//                    if (DEBUG_FOCUS || DEBUG_STACK) Slog.d(TAG,
+//                            "adjustStackFocus: Setting focused stack=" + stack);
+//                    mFocusedStack = stack;
+//                    return mFocusedStack;
+//                }
+//            }
 
             // Time to create the first app stack for this user.
             int stackId =
                     mService.createStack(-1, HOME_STACK_ID, StackBox.TASK_STACK_GOES_OVER, 1.0f);
+            /**
+             * Date: Mar 3, 2014
+             * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+             *
+             * TietoTODO: how to set position of starting window?
+             */
+            mService.relayoutWindow(stackId, new Rect(200, 400, 700, 1000));
             if (DEBUG_FOCUS || DEBUG_STACK) Slog.d(TAG, "adjustStackFocus: New stack r=" + r +
                     " stackId=" + stackId);
             mFocusedStack = getStack(stackId);
@@ -2084,6 +2114,13 @@ public final class ActivityStackSupervisor {
             return;
         }
         removeTask(task);
+        /**
+         * Date: Feb 27, 2014
+         * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+         *
+         * set focused stack  to this, where task was moved
+         */
+        mFocusedStack = stack;
         stack.addTask(task, toTop);
         mWindowManager.addTask(taskId, stackId, toTop);
         resumeTopActivitiesLocked();

@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2010 The Android Open Source Project
+ * Copyright (C) 2014 Tieto Poland Sp. z o.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1054,8 +1055,17 @@ final class ActivityStack {
         // make sure any activities under it are now visible.
         boolean aboveTop = true;
         boolean showHomeBehindStack = false;
-        boolean behindFullscreen = !mStackSupervisor.isFrontStack(this) &&
-                !(forceHomeShown && isHomeStack());
+        /**
+         * Date: Feb 25, 2014
+         * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+         *
+         * TietoTODO: This cause to display home stack all the time.
+         * Is a better way? What in case, when mw will be launched only
+         * on second display?
+         */
+//        boolean behindFullscreen = !mStackSupervisor.isFrontStack(this) &&
+//                !(forceHomeShown && isHomeStack());
+        boolean behindFullscreen = false;
         for (int taskNdx = mTaskHistory.size() - 1; taskNdx >= 0; --taskNdx) {
             final TaskRecord task = mTaskHistory.get(taskNdx);
             final ArrayList<ActivityRecord> activities = task.mActivities;

@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2011 The Android Open Source Project
+ * Copyright (C) 2014 Tieto Poland Sp. z o.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -463,9 +464,15 @@ final class WindowState implements WindowManagerPolicy.WindowState {
         mHaveFrame = true;
 
         TaskStack stack = mAppToken != null ? getStack() : null;
-        if (stack != null && stack.hasSibling()) {
+        /**
+         * Date: Mar 3, 2014
+         * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+         *
+         * If stackbox was relayouted, than use value from stackbox for parent frame
+         */
+        if (stack != null && (stack.hasSibling() || stack.mStackBox.isCrappyRelayouted())) {
             mContainingFrame.set(getStackBounds(stack));
-            if (mUnderStatusBar) {
+            if (mUnderStatusBar && !stack.mStackBox.isCrappyRelayouted()) {
                 mContainingFrame.top = pf.top;
             }
         } else {
@@ -548,8 +555,16 @@ final class WindowState implements WindowManagerPolicy.WindowState {
 
         //System.out.println("Out: " + mFrame);
 
-        // Now make sure the window fits in the overall display.
-        Gravity.applyDisplay(mAttrs.gravity, df, mFrame);
+        /**
+         * Date: Feb 27, 2014
+         * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+         *
+         * if window is relayouted, it doesn't need to fit display
+         */
+        if ((stack == null) || (!stack.mStackBox.isCrappyRelayouted())) {
+            // Now make sure the window fits in the overall display.
+            Gravity.applyDisplay(mAttrs.gravity, df, mFrame);
+        }
 
         // Make sure the content and visible frames are inside of the
         // final window frame.

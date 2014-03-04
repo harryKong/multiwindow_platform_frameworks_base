@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2006-2008 The Android Open Source Project
+ * Copyright (C) 2014 Tieto Poland Sp. z o.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -125,6 +126,7 @@ import android.content.pm.ServiceInfo;
 import android.content.res.CompatibilityInfo;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
+import android.graphics.Rect;
 import android.net.Proxy;
 import android.net.ProxyProperties;
 import android.net.Uri;
@@ -7206,8 +7208,14 @@ public final class ActivityManagerService extends ActivityManagerNative
 
     @Override
     public List<StackBoxInfo> getStackBoxes() {
-        enforceCallingPermission(android.Manifest.permission.MANAGE_ACTIVITY_STACKS,
-                "getStackBoxes()");
+        /**
+         * Date: Feb 25, 2014
+         * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+         *
+         * TietoTODO: turn on permissions somehow
+         */
+//        enforceCallingPermission(android.Manifest.permission.MANAGE_ACTIVITY_STACKS,
+//                "getStackBoxes()");
         long ident = Binder.clearCallingIdentity();
         try {
             List<StackBoxInfo> stackBoxInfos = mWindowManager.getStackBoxInfos();
@@ -16614,4 +16622,25 @@ public final class ActivityManagerService extends ActivityManagerNative
         info.applicationInfo = getAppInfoForUser(info.applicationInfo, userId);
         return info;
     }
+
+    @Override
+    public boolean relayoutWindow(int stackID, Rect r) {
+        /**
+         * Date: Feb 25, 2014
+         * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+         *
+         * TietoTODO: add posibility to relayout only own window
+         */
+//        enforceCallingPermission(android.Manifest.permission.MANAGE_ACTIVITY_STACKS,
+//                "resizeStackBox()");
+        long ident = Binder.clearCallingIdentity();
+        try {
+            Slog.v(TAG, "RelayoutWindow: " + stackID + " pos:" + r);
+            mWindowManager.relayoutWindow(stackID, r);
+        } finally {
+            Binder.restoreCallingIdentity(ident);
+        }
+        return true;
+    }
+
 }

@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2007 The Android Open Source Project
+ * Copyright (C) 2014 Tieto Poland Sp. z o.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -9818,6 +9819,23 @@ public class WindowManagerService extends IWindowManager.Stub
     }
 
     private WindowState findFocusedWindowLocked(DisplayContent displayContent) {
+        /**
+         * Date: Mar 3, 2014
+         * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+         *
+         * dirty hack for home stack to receive key input
+         * TietoTODO: propose other solution
+         */
+        if (displayContent.isHomeFocused()) {
+            TaskStack ts = displayContent.getHomeStack();
+            Task t = ts.getTasks().get(0);
+            if (t != null) {
+                AppWindowToken apw = t.mAppTokens.get(0);
+                if (apw != null) {
+                    return apw.findMainWindow();
+                }
+            }
+        }
         final WindowList windows = displayContent.getWindowList();
         for (int i = windows.size() - 1; i >= 0; i--) {
             final WindowState win = windows.get(i);
@@ -10861,5 +10879,24 @@ public class WindowManagerService extends IWindowManager.Stub
     @Override
     public Object getWindowManagerLock() {
         return mWindowMap;
+    }
+
+    /**
+     * Date: Feb 27, 2014
+     * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+     *
+     * For stackBox relayout
+     */
+    public boolean relayoutWindow(int stackID, Rect pos) {
+        synchronized (mWindowMap) {
+            final int numDisplays = mDisplayContents.size();
+            for (int displayNdx = 0; displayNdx < numDisplays; ++displayNdx) {
+                if (mDisplayContents.valueAt(displayNdx).relayoutStackBox(stackID, pos)) {
+                    performLayoutAndPlaceSurfacesLocked();
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }
