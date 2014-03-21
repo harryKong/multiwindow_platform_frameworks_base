@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2006 The Android Open Source Project
+ * Copyright (C) 2014 Tieto Poland Sp. z o.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -2212,8 +2213,17 @@ public final class ActivityThread {
         // its content on a secondary display if there is one.
         Context baseContext = appContext;
         String pkgName = SystemProperties.get("debug.second-display.pkg");
-        if (pkgName != null && !pkgName.isEmpty()
-                && r.packageInfo.mPackageName.contains(pkgName)) {
+        /**
+         * Date: Mar 18, 2014
+         * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+         *
+         * If intent has flag FLAG_ACTIVITY_RUN_ON_EXTERNAL_DISPLAY, then it is
+         * runned on external display
+         */
+        boolean externalDisplay = r.intent == null ? false :
+            (r.intent.getFlags() & Intent.FLAG_ACTIVITY_RUN_ON_EXTERNAL_DISPLAY) != 0;
+        if (externalDisplay || (pkgName != null && !pkgName.isEmpty()
+                && r.packageInfo.mPackageName.contains(pkgName))) {
             DisplayManagerGlobal dm = DisplayManagerGlobal.getInstance();
             for (int displayId : dm.getDisplayIds()) {
                 if (displayId != Display.DEFAULT_DISPLAY) {

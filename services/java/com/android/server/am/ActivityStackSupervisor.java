@@ -94,6 +94,13 @@ public final class ActivityStackSupervisor {
     static final boolean DEBUG_IDLE = DEBUG || false;
 
     public static final int HOME_STACK_ID = 0;
+    /**
+     * Date: Mar 21, 2014
+     * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+     *
+     * Id of home stack on external display
+     */
+    public static final int EXTERNAL_HOME_STACK_ID = 1;
 
     /** How long we wait until giving up on the last activity telling us it is idle. */
     static final int IDLE_TIMEOUT = 10*1000;
@@ -126,8 +133,14 @@ public final class ActivityStackSupervisor {
     /** Dismiss the keyguard after the next activity is displayed? */
     boolean mDismissKeyguardOnNextActivity = false;
 
-    /** Identifier counter for all ActivityStacks */
-    private int mLastStackId = HOME_STACK_ID;
+    /**
+     * Date: Mar 21, 2014
+     * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+     *
+     * Identifier counter for all ActivityStacks. Need to iterate from external
+     * stack id.
+     */
+    private int mLastStackId = EXTERNAL_HOME_STACK_ID;
 
     /** Task identifier that activities are currently being started in.  Incremented each time a
      * new task is created. */
@@ -1312,10 +1325,23 @@ public final class ActivityStackSupervisor {
 //                    return mFocusedStack;
 //                }
 //            }
-
             // Time to create the first app stack for this user.
+            /**
+             * Date: Mar 21, 2014
+             * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+             *
+             * Create new stack for application. If app need to be run on external
+             * display, than EXTERNAL_HOME_STACK_ID is used.
+             * TietoTODO: There is quiet assumption that task stack id is the same
+             * as stack box id. Can it be different?
+             */
+            int parentStackId = HOME_STACK_ID;
+            if ((r.intent != null) &&
+                    ((r.intent.getFlags() & Intent.FLAG_ACTIVITY_RUN_ON_EXTERNAL_DISPLAY) != 0)) {
+                parentStackId = EXTERNAL_HOME_STACK_ID;
+            }
             int stackId =
-                    mService.createStack(-1, HOME_STACK_ID, StackBox.TASK_STACK_GOES_OVER, 1.0f);
+                    mService.createStack(-1, parentStackId, StackBox.TASK_STACK_GOES_OVER, 1.0f);
             /**
              * Date: Mar 3, 2014
              * Copyright (C) 2014 Tieto Poland Sp. z o.o.
@@ -2092,8 +2118,15 @@ public final class ActivityStackSupervisor {
 
     int createStack() {
         while (true) {
-            if (++mLastStackId <= HOME_STACK_ID) {
-                mLastStackId = HOME_STACK_ID + 1;
+            /**
+             * Date: Mar 21, 2014
+             * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+             *
+             * Obvious change. Two stacks are reserved. One for home on default
+             * display, second for home on external display.
+             */
+            if (++mLastStackId <= EXTERNAL_HOME_STACK_ID) {
+                mLastStackId = EXTERNAL_HOME_STACK_ID + 1;
             }
             if (getStack(mLastStackId) == null) {
                 break;

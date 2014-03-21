@@ -21,6 +21,7 @@ import android.graphics.Rect;
 import android.util.Slog;
 
 import static com.android.server.am.ActivityStackSupervisor.HOME_STACK_ID;
+import static com.android.server.am.ActivityStackSupervisor.EXTERNAL_HOME_STACK_ID;
 import static com.android.server.wm.WindowManagerService.DEBUG_STACK;
 import static com.android.server.wm.WindowManagerService.TAG;
 
@@ -44,7 +45,7 @@ public class StackBox {
     /** Used with {@link WindowManagerService#createStack}. Put on a lower layer on display. */
     public static final int TASK_STACK_GOES_UNDER = 7;
 
-    static int sCurrentBoxId = 0;
+    static int sCurrentBoxId = 1;
 
     /** Unique id for this box */
     final int mStackBoxId;
@@ -86,8 +87,33 @@ public class StackBox {
     /** Used to keep from reallocating a temporary Rect for propagating bounds to child boxes */
     Rect mTmpRect = new Rect();
 
+    /**
+     * Date: Mar 21, 2014
+     * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+     *
+     * Create home stackbox for primary and external screen. Should be used
+     * only in DisplayContent constructor.
+     */
+    StackBox(WindowManagerService service, DisplayContent displayContent,
+            StackBox parent, int stackBoxId) {
+        mStackBoxId = stackBoxId;
+        mService = service;
+        mDisplayContent = displayContent;
+        mParent = parent;
+    }
+
     StackBox(WindowManagerService service, DisplayContent displayContent, StackBox parent) {
         synchronized (StackBox.class) {
+            /**
+             * Date: Mar 21, 2014
+             * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+             *
+             * Prohibit from creating stacks with ids reserved for homes for
+             * default and external screen.
+             */
+            if (sCurrentBoxId <= EXTERNAL_HOME_STACK_ID) {
+                sCurrentBoxId = EXTERNAL_HOME_STACK_ID + 1;
+            }
             mStackBoxId = sCurrentBoxId++;
         }
 

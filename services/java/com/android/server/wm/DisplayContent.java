@@ -18,6 +18,7 @@
 package com.android.server.wm;
 
 import static com.android.server.am.ActivityStackSupervisor.HOME_STACK_ID;
+import static com.android.server.am.ActivityStackSupervisor.EXTERNAL_HOME_STACK_ID;
 import static com.android.server.wm.WindowManagerService.DEBUG_STACK;
 import static com.android.server.wm.WindowManagerService.DEBUG_VISIBILITY;
 import static com.android.server.wm.WindowManagerService.TAG;
@@ -135,9 +136,18 @@ class DisplayContent {
         isDefaultDisplay = mDisplayId == Display.DEFAULT_DISPLAY;
         mService = service;
 
-        StackBox newBox = new StackBox(service, this, null);
+        StackBox newBox = new StackBox(service, this, null,
+                isDefaultDisplay ? HOME_STACK_ID : EXTERNAL_HOME_STACK_ID);
         mStackBoxes.add(newBox);
-        TaskStack newStack = new TaskStack(service, HOME_STACK_ID, this);
+        /**
+         * Date: Mar 19, 2014
+         * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+         *
+         * Create stack with home id for primary display, and with external id
+         * for second display. Only two displays are supported for now.
+         */
+        TaskStack newStack = new TaskStack(service,
+                isDefaultDisplay ? HOME_STACK_ID : EXTERNAL_HOME_STACK_ID, this);
         newStack.mStackBox = newBox;
         newBox.mStack = newStack;
         mHomeStack = newStack;
@@ -243,7 +253,14 @@ class DisplayContent {
         TaskStack newStack = null;
         if (DEBUG_STACK) Slog.d(TAG, "createStack: stackId=" + stackId + " relativeStackBoxId="
                 + relativeStackBoxId + " position=" + position + " weight=" + weight);
-        if (stackId == HOME_STACK_ID) {
+        /**
+         * Date: Mar 21, 2014
+         * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+         *
+         * Add support for external display.
+         */
+        if ((stackId == HOME_STACK_ID) ||
+                ((stackId == EXTERNAL_HOME_STACK_ID) && !isDefaultDisplay)) {
             if (mStackBoxes.size() != 1) {
                 throw new IllegalArgumentException("createStack: HOME_STACK_ID (0) not first.");
             }
@@ -273,10 +290,6 @@ class DisplayContent {
                         break;
                     }
                 }
-            }
-            if (stackBoxNdx < 0) {
-                throw new IllegalArgumentException("createStack: stackBoxId " + relativeStackBoxId
-                        + " not found.");
             }
             /**
              * Date: Mar 3, 2014
