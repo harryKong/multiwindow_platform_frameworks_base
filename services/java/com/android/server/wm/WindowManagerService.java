@@ -4853,6 +4853,14 @@ public class WindowManagerService extends IWindowManager.Stub
                 }
             }
             Slog.e(TAG, "createStack: Unable to find relativeStackBoxId=" + relativeStackBoxId);
+            /**
+             * Date: Mar 20, 2014
+             * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+             *
+             * Moved from DisplayContent.createStack()
+             */
+            throw new IllegalArgumentException("createStack: stackBoxId " + relativeStackBoxId
+                    + " not found.");
         }
     }
 
@@ -6965,7 +6973,18 @@ public class WindowManagerService extends IWindowManager.Stub
     }
 
     public void displayReady() {
-        displayReady(Display.DEFAULT_DISPLAY);
+        /**
+         * Date: Mar 21, 2014
+         * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+         *
+         * Initialize all displays. If Android is connected to external display
+         * during startup, it is needed to initialize all display, not only
+         * default display.
+         */
+        Display[] displays = mDisplayManager.getDisplays();
+        for (Display d : displays) {
+            displayReady(d.getDisplayId());
+        }
 
         synchronized(mWindowMap) {
             final DisplayContent displayContent = getDefaultDisplayContentLocked();
