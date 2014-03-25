@@ -985,6 +985,14 @@ public final class ActivityStackSupervisor {
                 }
             }
             app.forceProcessStateUpTo(ActivityManager.PROCESS_STATE_TOP);
+            /**
+             * Date: Mar 25, 2014
+             * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+             *
+             * If first activity in task was launch on external display, than
+             * all activities in task should be run on external display.
+             */
+            r.intent.addFlags(r.task.intent.getFlags() & Intent.FLAG_ACTIVITY_RUN_ON_EXTERNAL_DISPLAY);
             app.thread.scheduleLaunchActivity(new Intent(r.intent), r.appToken,
                     System.identityHashCode(r), r.info,
                     new Configuration(mService.mConfiguration), r.compat,
