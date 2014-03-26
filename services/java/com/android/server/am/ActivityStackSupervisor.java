@@ -1355,8 +1355,12 @@ public final class ActivityStackSupervisor {
              * Copyright (C) 2014 Tieto Poland Sp. z o.o.
              *
              * TietoTODO: how to set position of starting window?
+             * Activities which run on external are run fullscreen. At least
+             * for now
              */
-            mService.relayoutWindow(stackId, new Rect(200, 400, 700, 1000));
+            if (parentStackId != EXTERNAL_HOME_STACK_ID) {
+                mService.relayoutWindow(stackId, new Rect(200, 400, 700, 1000));
+            }
             if (DEBUG_FOCUS || DEBUG_STACK) Slog.d(TAG, "adjustStackFocus: New stack r=" + r +
                     " stackId=" + stackId);
             mFocusedStack = getStack(stackId);
