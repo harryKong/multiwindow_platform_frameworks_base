@@ -3406,6 +3406,15 @@ public class Intent implements Parcelable, Cloneable {
     public static final int FLAG_ACTIVITY_RUN_ON_EXTERNAL_DISPLAY = 0x00000080;
 
     /**
+     * Date: Apr 1, 2014
+     * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+     *
+     * This flag is used to launch app in multiwindow
+     * {@hide}
+     */
+    public static final int FLAG_ACTIVITY_RUN_IN_WINDOW = 0x00000100;
+
+    /**
      * If set, the new activity is not kept in the history stack.  As soon as
      * the user navigates away from it, the activity is finished.  This may also
      * be set with the {@link android.R.styleable#AndroidManifestActivity_noHistory

@@ -1344,8 +1344,8 @@ public final class ActivityStackSupervisor {
              * as stack box id. Can it be different?
              */
             int parentStackId = HOME_STACK_ID;
-            if ((r.intent != null) &&
-                    ((r.intent.getFlags() & Intent.FLAG_ACTIVITY_RUN_ON_EXTERNAL_DISPLAY) != 0)) {
+            int intentFlags = (r.intent != null) ? r.intent.getFlags() : 0;
+            if ((intentFlags & Intent.FLAG_ACTIVITY_RUN_ON_EXTERNAL_DISPLAY) != 0) {
                 parentStackId = EXTERNAL_HOME_STACK_ID;
             }
             int stackId =
@@ -1358,7 +1358,8 @@ public final class ActivityStackSupervisor {
              * Activities which run on external are run fullscreen. At least
              * for now
              */
-            if (parentStackId != EXTERNAL_HOME_STACK_ID) {
+            if ((parentStackId == HOME_STACK_ID) &&
+                    ((intentFlags & Intent.FLAG_ACTIVITY_RUN_IN_WINDOW) != 0)){
                 mService.relayoutWindow(stackId, new Rect(200, 400, 700, 1000));
             }
             if (DEBUG_FOCUS || DEBUG_STACK) Slog.d(TAG, "adjustStackFocus: New stack r=" + r +

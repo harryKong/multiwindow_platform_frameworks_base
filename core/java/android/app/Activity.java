@@ -5191,6 +5191,10 @@ public class Activity extends ContextThemeWrapper
      * turned off in AMS.
      */
     private int getStackBoxId() {
+        if (mIntent != null &&
+                (mIntent.getFlags() & Intent.FLAG_ACTIVITY_RUN_IN_WINDOW) == 0) {
+            return -1;
+        }
         try {
             int taskId = getTaskId();
             List<StackBoxInfo> list = ActivityManagerNative.getDefault().getStackBoxes();
