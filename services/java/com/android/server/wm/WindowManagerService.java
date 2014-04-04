@@ -534,6 +534,14 @@ public class WindowManagerService extends IWindowManager.Stub
     boolean mAnimateWallpaperWithTarget;
 
     AppWindowToken mFocusedApp = null;
+    /**
+     * Date: Apr 2, 2014
+     * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+     *
+     * Holds information about currently focused display. Needed for multidisplay.
+     * Useful for finding focused window.
+     */
+    DisplayContent mFocusedDisplayContent = null;
 
     PowerManagerService mPowerManager;
 
@@ -603,7 +611,14 @@ public class WindowManagerService extends IWindowManager.Stub
     SparseArray<Task> mTaskIdToTask = new SparseArray<Task>();
     SparseArray<TaskStack> mStackIdToStack = new SparseArray<TaskStack>();
 
-    private final PointerEventDispatcher mPointerEventDispatcher;
+    /**
+     * Date: Apr 3, 2014
+     * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+     *
+     * Multiple pointer listeners for every screen. Used for switching between
+     * task stacks.
+     */
+    private final SparseArray<PointerEventDispatcher> mPointerEventDispatcherArray = new SparseArray<PointerEventDispatcher>();
 
     final class DragInputEventReceiver extends InputEventReceiver {
         public DragInputEventReceiver(InputChannel inputChannel, Looper looper) {
@@ -739,7 +754,8 @@ public class WindowManagerService extends IWindowManager.Stub
         mDisplaySettings = new DisplaySettings(context);
         mDisplaySettings.readSettingsLocked();
 
-        mPointerEventDispatcher = new PointerEventDispatcher(mInputManager.monitorInput(TAG));
+        mPointerEventDispatcherArray.append(Display.DEFAULT_DISPLAY,
+                new PointerEventDispatcher(mInputManager.monitorInput(TAG)));
 
         mFxSession = new SurfaceSession();
         mDisplayManager = (DisplayManager)context.getSystemService(Context.DISPLAY_SERVICE);
@@ -5147,14 +5163,23 @@ public class WindowManagerService extends IWindowManager.Stub
                 mAnimatorDurationScale };
     }
 
+    /**
+     * Date: Apr 3, 2014
+     * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+     *
+     * TietoTODO: Use this function only for default display. Since there are
+     * many PointerEventDispatcher (one for display), maybe its worth to change
+     * adjust registerPointerEventListener to support multiple displays? Needs
+     * more investigation.
+     */
     @Override
     public void registerPointerEventListener(PointerEventListener listener) {
-        mPointerEventDispatcher.registerInputEventListener(listener);
+        mPointerEventDispatcherArray.get(Display.DEFAULT_DISPLAY).registerInputEventListener(listener);
     }
 
     @Override
     public void unregisterPointerEventListener(PointerEventListener listener) {
-        mPointerEventDispatcher.unregisterInputEventListener(listener);
+        mPointerEventDispatcherArray.get(Display.DEFAULT_DISPLAY).unregisterInputEventListener(listener);
     }
 
     // Called by window manager policy. Not exposed externally.
@@ -6747,7 +6772,15 @@ public class WindowManagerService extends IWindowManager.Stub
                 mH.removeMessages(H.REPORT_HARD_KEYBOARD_STATUS_CHANGE);
                 mH.sendEmptyMessage(H.REPORT_HARD_KEYBOARD_STATUS_CHANGE);
             }
-            if (!mHardKeyboardEnabled) {
+            /**
+             * Date: Apr 2, 2014
+             * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+             *
+             * Force to display keyboard always when there is external display
+             * connected. Needed to show one keyboard for internal display, and
+             * use external keybaord on external display
+             */
+            if ((!mHardKeyboardEnabled) || (mDisplayContents.size() > 1)) {
                 config.keyboard = Configuration.KEYBOARD_NOKEYS;
             }
 
@@ -7522,6 +7555,13 @@ public class WindowManagerService extends IWindowManager.Stub
                 case TAP_OUTSIDE_STACK: {
                     int stackId;
                     synchronized (mWindowMap) {
+                        /**
+                         * Date: Apr 2, 2014
+                         * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+                         *
+                         * Set focused display content.
+                         */
+                        mFocusedDisplayContent = (DisplayContent)msg.obj;
                         stackId = ((DisplayContent)msg.obj).stackIdFromPoint(msg.arg1, msg.arg2);
                     }
                     if (stackId >= 0) {
@@ -7963,8 +8003,15 @@ public class WindowManagerService extends IWindowManager.Stub
     }
 
     final void rebuildAppWindowListLocked() {
-        // TODO: Multidisplay, when ActivityStacks and tasks exist on more than one display.
-        rebuildAppWindowListLocked(getDefaultDisplayContentLocked());
+        /**
+         * Date: Apr 4, 2014
+         * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+         *
+         * Multidisplay support
+         */
+        for (int i = 0; i < mDisplayContents.size(); i++) {
+            rebuildAppWindowListLocked(mDisplayContents.valueAt(i));
+        }
     }
 
     private void rebuildAppWindowListLocked(final DisplayContent displayContent) {
@@ -9827,16 +9874,37 @@ public class WindowManagerService extends IWindowManager.Stub
         }
 
         final int displayCount = mDisplayContents.size();
+        /**
+         * Date: Apr 1, 2014
+         * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+         *
+         * Support for multidisplay.
+         */
+        Slog.v(TAG, "computeFocusedWindowLocked" + mFocusedDisplayContent, new RuntimeException());
+        if (mFocusedDisplayContent != null) {
+            Slog.v(TAG, "computeFocusedWindowLocked" + mFocusedDisplayContent.getDisplayId() );
+            WindowState win = findFocusedWindowLocked(mFocusedDisplayContent);
+            if (win != null) {
+                return win;
+            }
+        }
         for (int i = 0; i < displayCount; i++) {
             final DisplayContent displayContent = mDisplayContents.valueAt(i);
             WindowState win = findFocusedWindowLocked(displayContent);
             if (win != null) {
+                mFocusedDisplayContent = displayContent;
                 return win;
             }
         }
         return null;
     }
 
+    /**
+     * Date: Apr 2, 2014
+     * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+     *
+     * TietoTODO: Big WTF! Why mFocusedApp cannot be used?
+     */
     private WindowState findFocusedWindowLocked(DisplayContent displayContent) {
         /**
          * Date: Mar 3, 2014
@@ -10783,11 +10851,22 @@ public class WindowManagerService extends IWindowManager.Stub
         }
         configureDisplayPolicyLocked(displayContent);
 
-        // TODO: Create an input channel for each display with touch capability.
-        if (displayId == Display.DEFAULT_DISPLAY) {
-            displayContent.mTapDetector = new StackTapPointerEventListener(this, displayContent);
-            registerPointerEventListener(displayContent.mTapDetector);
+        /**
+         * Date: Apr 2, 2014
+         * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+         *
+         * Support for multidisplay
+         * TietoTODO: is synchronization needed here?
+         */
+        displayContent.mTapDetector = new StackTapPointerEventListener(this, displayContent);
+        String name =  TAG + " display " + displayId;
+        // special case for default display, which is initialized in WMS ctor
+        PointerEventDispatcher ped = mPointerEventDispatcherArray.get(displayId);
+        if (ped == null) {
+            ped = new PointerEventDispatcher(mInputManager.monitorInput(name, displayId));
         }
+        ped.registerInputEventListener(displayContent.mTapDetector);
+        mPointerEventDispatcherArray.put(displayId, ped);
 
         return displayContent;
     }
@@ -10868,11 +10947,29 @@ public class WindowManagerService extends IWindowManager.Stub
 
     private void handleDisplayRemovedLocked(int displayId) {
         final DisplayContent displayContent = getDisplayContentLocked(displayId);
+        /**
+         * Date: Apr 2, 2014
+         * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+         *
+         * Release display content when display is removed
+         */
+        mFocusedDisplayContent = null;
         if (displayContent != null) {
             mDisplayContents.delete(displayId);
             displayContent.close();
-            if (displayId == Display.DEFAULT_DISPLAY) {
-                unregisterPointerEventListener(displayContent.mTapDetector);
+            /**
+             * Date: Apr 3, 2014
+             * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+             *
+             * Support for multidisplay. Pointer event dispatcher is released
+             * only for external displays, because it is created in newDisplayContentLocked.
+             */
+            PointerEventDispatcher ped = mPointerEventDispatcherArray.get(displayId);
+            if (ped != null) {
+                ped.unregisterInputEventListener(displayContent.mTapDetector);
+            }
+            if (displayId != Display.DEFAULT_DISPLAY) {
+                mPointerEventDispatcherArray.remove(displayId);
             }
             WindowList windows = displayContent.getWindowList();
             while (!windows.isEmpty()) {

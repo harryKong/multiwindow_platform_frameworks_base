@@ -107,6 +107,17 @@ class DisplayContent {
     /** Detect user tapping outside of current focused stack bounds .*/
     Region mTouchExcludeRegion = new Region();
 
+    /**
+     * Date: Apr 3, 2014
+     * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+     *
+     * TietoTODO: This is dirty hack. It is used together with mTouchExcludeRegion
+     * in StackTapPointerEventListener to check which Display is currently focused.
+     * I think it need to be done in different way to allow focus window on
+     * every screen at the same time.
+     */
+    static int sCurrentTouchedDisplay = Display.DEFAULT_DISPLAY;
+
     /** Save allocating when retrieving tasks */
     private ArrayList<Task> mTaskHistory = new ArrayList<Task>();
 
@@ -461,12 +472,6 @@ class DisplayContent {
                         addTask(task, true);
                     }
                     mHomeHasFocus = false;
-                    /**
-                     * Date: Mar 3, 2014
-                     * Copyright (C) 2014 Tieto Poland Sp. z o.o.
-                     *
-                     * TietoTODO: multidisplay!!! see inside this method
-                     */
                     mService.rebuildAppWindowListLocked();
                     mService.prepareAppTransition(AppTransition.TRANSIT_TASK_TO_FRONT, true);
                     mService.executeAppTransition();
