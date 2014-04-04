@@ -68,6 +68,7 @@ import android.os.Process;
 import android.os.RemoteException;
 import android.os.SystemClock;
 import android.os.UserHandle;
+import android.provider.Settings;
 import android.util.EventLog;
 import android.util.Slog;
 import android.util.SparseIntArray;
@@ -101,6 +102,14 @@ public final class ActivityStackSupervisor {
      * Id of home stack on external display
      */
     public static final int EXTERNAL_HOME_STACK_ID = 1;
+
+    /**
+     * Date: 4 Apr 2014
+     * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+     *
+     * Whether the Tieto Multiwindow is enabled.
+     */
+    public static final String TIETO_MULTIWINDOW_ENABLED = "tieto_multiwindow";
 
     /** How long we wait until giving up on the last activity telling us it is idle. */
     static final int IDLE_TIMEOUT = 10*1000;
@@ -1340,11 +1349,21 @@ public final class ActivityStackSupervisor {
              *
              * Create new stack for application. If app need to be run on external
              * display, than EXTERNAL_HOME_STACK_ID is used.
+             * Added enable/disable multiwindow functionality.
              * TietoTODO: There is quiet assumption that task stack id is the same
              * as stack box id. Can it be different?
              */
             int parentStackId = HOME_STACK_ID;
-            int intentFlags = (r.intent != null) ? r.intent.getFlags() : 0;
+            int intentFlags = 0;
+
+            boolean multiwindowEnabled = Settings.System.getInt(mContext.getContentResolver(),
+                    Settings.System.TIETO_MULTIWINDOW_ENABLED, 0) != 0;
+            if (multiwindowEnabled && (r.intent != null)) {
+                r.intent.addFlags(Intent.FLAG_ACTIVITY_RUN_IN_WINDOW);
+            }
+
+            intentFlags = (r.intent != null) ? r.intent.getFlags() : 0;
+
             if ((intentFlags & Intent.FLAG_ACTIVITY_RUN_ON_EXTERNAL_DISPLAY) != 0) {
                 parentStackId = EXTERNAL_HOME_STACK_ID;
             }
@@ -1359,7 +1378,7 @@ public final class ActivityStackSupervisor {
              * for now
              */
             if ((parentStackId == HOME_STACK_ID) &&
-                    ((intentFlags & Intent.FLAG_ACTIVITY_RUN_IN_WINDOW) != 0)){
+                    ((intentFlags & Intent.FLAG_ACTIVITY_RUN_IN_WINDOW) != 0)) {
                 mService.relayoutWindow(stackId, new Rect(200, 400, 700, 1000));
             }
             if (DEBUG_FOCUS || DEBUG_STACK) Slog.d(TAG, "adjustStackFocus: New stack r=" + r +
