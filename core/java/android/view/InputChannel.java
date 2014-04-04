@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2010 The Android Open Source Project
+ * Copyright (C) 2014 Tieto Poland Sp. z o.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,6 +58,14 @@ public final class InputChannel implements Parcelable {
     private native void nativeDup(InputChannel target);
     
     private native String nativeGetName();
+    /**
+     * Date: Apr 3, 2014
+     * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+     *
+     * Sets display. Used only for monitors to distinguish between default display
+     * and external display.
+     */
+    private native void nativeSetDisplayId(int displayId);
 
     /**
      * Creates an uninitialized input channel.
@@ -111,7 +120,17 @@ public final class InputChannel implements Parcelable {
     public void dispose() {
         nativeDispose(false);
     }
-    
+
+    /**
+     * Date: Apr 3, 2014
+     * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+     *
+     * Used only for monitor.
+     */
+    public void setDisplayId(int displayId) {
+        nativeSetDisplayId(displayId);
+    }
+
     /**
      * Transfers ownership of the internal state of the input channel to another
      * instance and invalidates this instance.  This is used to pass an input channel
