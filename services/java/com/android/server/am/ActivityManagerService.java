@@ -2246,6 +2246,13 @@ public final class ActivityManagerService extends ActivityManagerNative
                 ActivityRecord r = stack.topRunningActivityLocked(null);
                 if (r != null) {
                     setFocusedActivityLocked(r);
+                    /**
+                     * Date: Apr 7, 2014
+                     * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+                     *
+                     * Switch activity state from paused to resumed.
+                     */
+                    moveTaskToFront(r.task.taskId, 0, null);
                 }
             }
         }
