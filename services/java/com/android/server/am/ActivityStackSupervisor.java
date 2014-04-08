@@ -999,9 +999,11 @@ public final class ActivityStackSupervisor {
              * Copyright (C) 2014 Tieto Poland Sp. z o.o.
              *
              * If first activity in task was launch on external display, than
-             * all activities in task should be run on external display.
+             * all activities in task should be run on external display. The
+             * same rule is use for activities launched in window.
              */
             r.intent.addFlags(r.task.intent.getFlags() & Intent.FLAG_ACTIVITY_RUN_ON_EXTERNAL_DISPLAY);
+            r.intent.addFlags(r.task.intent.getFlags() & Intent.FLAG_ACTIVITY_RUN_IN_WINDOW);
             app.thread.scheduleLaunchActivity(new Intent(r.intent), r.appToken,
                     System.identityHashCode(r), r.info,
                     new Configuration(mService.mConfiguration), r.compat,
