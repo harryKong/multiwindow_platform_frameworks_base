@@ -9880,9 +9880,7 @@ public class WindowManagerService extends IWindowManager.Stub
          *
          * Support for multidisplay.
          */
-        Slog.v(TAG, "computeFocusedWindowLocked" + mFocusedDisplayContent, new RuntimeException());
         if (mFocusedDisplayContent != null) {
-            Slog.v(TAG, "computeFocusedWindowLocked" + mFocusedDisplayContent.getDisplayId() );
             WindowState win = findFocusedWindowLocked(mFocusedDisplayContent);
             if (win != null) {
                 return win;
@@ -11014,5 +11012,19 @@ public class WindowManagerService extends IWindowManager.Stub
             }
         }
         return false;
+    }
+
+    /**
+     * Date: Apr 8, 2014
+     * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+     *
+     * It is used only for new activity creation. If intent which starts activity
+     * has flag FLAG_ACTIVITY_RUN_ON_EXTERNAL display set, than it is needed
+     * to prohibit launching that activiyt on external display.
+     */
+    public boolean isExternalDisplayConnected() {
+        synchronized (mWindowMap) {
+            return mDisplayContents.size() > 1;
+        }
     }
 }

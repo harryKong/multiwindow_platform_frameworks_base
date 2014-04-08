@@ -1366,8 +1366,19 @@ public final class ActivityStackSupervisor {
 
             intentFlags = (r.intent != null) ? r.intent.getFlags() : 0;
 
+            /**
+             * Date: Apr 8, 2014
+             * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+             *
+             * This is fix for crashing app, when there is no external display,
+             * but FLAG_ACTIVITY_RUN_ON_EXTERNAL_DISPLAY is set.
+             */
             if ((intentFlags & Intent.FLAG_ACTIVITY_RUN_ON_EXTERNAL_DISPLAY) != 0) {
-                parentStackId = EXTERNAL_HOME_STACK_ID;
+                if (mWindowManager.isExternalDisplayConnected()) {
+                    parentStackId = EXTERNAL_HOME_STACK_ID;
+                } else {
+                    intentFlags &= ~Intent.FLAG_ACTIVITY_RUN_ON_EXTERNAL_DISPLAY;
+                }
             }
             int stackId =
                     mService.createStack(-1, parentStackId, StackBox.TASK_STACK_GOES_OVER, 1.0f);
