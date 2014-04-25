@@ -359,9 +359,7 @@ final class WindowState implements WindowManagerPolicy.WindowState {
                 mAttrs.type <= LAST_SUB_WINDOW)) {
             // The multiplier here is to reserve space for multiple
             // windows in the same type layer.
-            mBaseLayer = mPolicy.windowTypeToLayerLw(
-                    attachedWindow.mAttrs.type) * WindowManagerService.TYPE_LAYER_MULTIPLIER
-                    + WindowManagerService.TYPE_LAYER_OFFSET;
+            mBaseLayer = attachedWindow.mBaseLayer;
             mSubLayer = mPolicy.subWindowTypeToLayerLw(a.type);
             mAttachedWindow = attachedWindow;
             if (WindowManagerService.DEBUG_ADD_REMOVE) Slog.v(TAG, "Adding " + this + " to " + mAttachedWindow);
@@ -398,9 +396,23 @@ final class WindowState implements WindowManagerPolicy.WindowState {
             mIsWallpaper = attachedWindow.mAttrs.type == TYPE_WALLPAPER;
             mIsFloatingLayer = mIsImWindow || mIsWallpaper;
         } else {
+            /**
+             * Date: Apr 23, 2014
+             * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+             *
+             * If window is started in multiwindow, than it is going to be
+             * launched in layer TYPE_MULTIWINDOW_APPLICATION (above normal apps).
+             */
+            int type = a.type;
+            if (mToken != null && mToken.appWindowToken != null) {
+                Task task = mService.mTaskIdToTask.get(mToken.appWindowToken.groupId);
+                if (task.mStack.mStackBox.isFloating()) {
+                    type = WindowManager.LayoutParams.TYPE_MULTIWINDOW_APPLICATION;
+                }
+            }
             // The multiplier here is to reserve space for multiple
             // windows in the same type layer.
-            mBaseLayer = mPolicy.windowTypeToLayerLw(a.type)
+            mBaseLayer = mPolicy.windowTypeToLayerLw(type)
                     * WindowManagerService.TYPE_LAYER_MULTIPLIER
                     + WindowManagerService.TYPE_LAYER_OFFSET;
             mSubLayer = 0;

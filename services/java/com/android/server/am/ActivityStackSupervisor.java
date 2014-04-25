@@ -302,14 +302,8 @@ public final class ActivityStackSupervisor {
     }
 
     void moveHomeToTop() {
-        /**
-         * Date: Mar 3, 2014
-         * Copyright (C) 2014 Tieto Poland Sp. z o.o.
-         *
-         * TietoTODO: does it really needed? maybe it's good to remove whole function?
-         */
-        //moveHomeStack(true);
-        //mHomeStack.moveHomeTaskToTop();
+        moveHomeStack(true);
+        mHomeStack.moveHomeTaskToTop();
     }
 
     boolean resumeHomeActivity(ActivityRecord prev) {
@@ -1380,8 +1374,10 @@ public final class ActivityStackSupervisor {
                     intentFlags &= ~Intent.FLAG_ACTIVITY_RUN_ON_EXTERNAL_DISPLAY;
                 }
             }
+            boolean isMultiwindow = (intentFlags & Intent.FLAG_ACTIVITY_RUN_IN_WINDOW) != 0;
             int stackId =
-                    mService.createStack(-1, parentStackId, StackBox.TASK_STACK_GOES_OVER, 1.0f);
+                    mService.createStack(-1, parentStackId, isMultiwindow ?
+                           StackBox.TASK_FLOATING : StackBox.TASK_STACK_GOES_OVER, 1.0f);
             /**
              * Date: Mar 3, 2014
              * Copyright (C) 2014 Tieto Poland Sp. z o.o.
@@ -1390,13 +1386,20 @@ public final class ActivityStackSupervisor {
              * Activities which run on external are run fullscreen. At least
              * for now
              */
-            if ((parentStackId == HOME_STACK_ID) &&
-                    ((intentFlags & Intent.FLAG_ACTIVITY_RUN_IN_WINDOW) != 0)) {
+            if ((parentStackId == HOME_STACK_ID) && isMultiwindow) {
                 mService.relayoutWindow(stackId, new Rect(200, 400, 700, 1000));
             }
             if (DEBUG_FOCUS || DEBUG_STACK) Slog.d(TAG, "adjustStackFocus: New stack r=" + r +
                     " stackId=" + stackId);
             mFocusedStack = getStack(stackId);
+            /**
+             * Date: Apr 23, 2014
+             * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+             *
+             * Set stack as multiwindow stack. Stack is created few lines above:
+             * mService.createStack()
+             */
+            mFocusedStack.setMultiwindowStack(isMultiwindow);
             return mFocusedStack;
         }
         return mHomeStack;

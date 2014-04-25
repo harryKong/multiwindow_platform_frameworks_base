@@ -9815,6 +9815,12 @@ public class WindowManagerService extends IWindowManager.Stub
             mH.removeMessages(H.REPORT_FOCUS_CHANGE);
             mH.sendEmptyMessage(H.REPORT_FOCUS_CHANGE);
             // TODO(multidisplay): Focused windows on default display only.
+            /**
+             * Date: Apr 15, 2014
+             * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+             *
+             * TietoTODO: Focused window on default display only!
+             */
             final DisplayContent displayContent = getDefaultDisplayContentLocked();
             final boolean imWindowChanged = moveInputMethodWindowsIfNeededLocked(
                     mode != UPDATE_FOCUS_WILL_ASSIGN_LAYERS
@@ -9905,20 +9911,25 @@ public class WindowManagerService extends IWindowManager.Stub
      */
     private WindowState findFocusedWindowLocked(DisplayContent displayContent) {
         /**
-         * Date: Mar 3, 2014
+         * Date: Apr 23, 2014
          * Copyright (C) 2014 Tieto Poland Sp. z o.o.
          *
-         * dirty hack for home stack to receive key input
-         * TietoTODO: propose other solution
+         * If there is focused app than use it for find focused window. Z-order
+         * is not always the best choice. Launcher need to be always on bottom.
          */
-        if (displayContent.isHomeFocused()) {
-            TaskStack ts = displayContent.getHomeStack();
-            Task t = ts.getTasks().get(0);
-            if (t != null) {
-                AppWindowToken apw = t.mAppTokens.get(0);
-                if (apw != null) {
-                    return apw.findMainWindow();
+        if (mFocusedApp != null) {
+            Iterator<WindowState> iter = mFocusedApp.allAppWindows.iterator();
+            WindowState maxWin = null;
+            while (iter.hasNext()) {
+                WindowState win = iter.next();
+                if ((win.mAttrs.type != TYPE_APPLICATION_STARTING) &&
+                        !win.mExiting &&
+                        (maxWin == null || (maxWin.mLayer < win.mLayer))) {
+                    maxWin = win;
                 }
+            }
+            if (maxWin != null) {
+                return maxWin;
             }
         }
         final WindowList windows = displayContent.getWindowList();

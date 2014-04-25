@@ -44,6 +44,16 @@ public class StackBox {
     public static final int TASK_STACK_GOES_OVER = 6;
     /** Used with {@link WindowManagerService#createStack}. Put on a lower layer on display. */
     public static final int TASK_STACK_GOES_UNDER = 7;
+    /**
+     * Date: Apr 11, 2014
+     * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+     *
+     * Used with {@link WindowManagerService#createStack}. Indicates that stackbox
+     * contains floating stack, which can be moved anywhere.
+     */
+    public static final int TASK_FLOATING = 8;
+
+    private boolean mIsFloating = false;
 
     static int sCurrentBoxId = 1;
 
@@ -99,10 +109,11 @@ public class StackBox {
         mStackBoxId = stackBoxId;
         mService = service;
         mDisplayContent = displayContent;
-        mParent = parent;
+        // This ctor is used only for creating home stacks
+        init(parent, -1);
     }
 
-    StackBox(WindowManagerService service, DisplayContent displayContent, StackBox parent) {
+    StackBox(WindowManagerService service, DisplayContent displayContent, int stackType, StackBox parent) {
         synchronized (StackBox.class) {
             /**
              * Date: Mar 21, 2014
@@ -116,10 +127,25 @@ public class StackBox {
             }
             mStackBoxId = sCurrentBoxId++;
         }
-
         mService = service;
         mDisplayContent = displayContent;
+        init(parent, stackType);
+    }
+
+    private void init(StackBox parent, int stackType) {
         mParent = parent;
+        mIsFloating = stackType == TASK_FLOATING;
+    }
+
+    /**
+     * Date: Apr 11, 2014
+     * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+     *
+     * Indicates whether stackbox is floating stackbox, which can be moved
+     * anywhere.
+     */
+    public boolean isFloating() {
+        return mIsFloating;
     }
 
     /** Propagate #layoutNeeded bottom up. */
@@ -247,11 +273,11 @@ public class StackBox {
                 break;
         }
 
-        mFirst = new StackBox(mService, mDisplayContent, this);
+        mFirst = new StackBox(mService, mDisplayContent, -1, this);
         firstStack.mStackBox = mFirst;
         mFirst.mStack = firstStack;
 
-        mSecond = new StackBox(mService, mDisplayContent, this);
+        mSecond = new StackBox(mService, mDisplayContent, -1, this);
         secondStack.mStackBox = mSecond;
         mSecond.mStack = secondStack;
 
