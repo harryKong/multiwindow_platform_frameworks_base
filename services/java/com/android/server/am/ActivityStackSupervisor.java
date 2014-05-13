@@ -1322,22 +1322,6 @@ public final class ActivityStackSupervisor {
 //                return mFocusedStack;
 //            }
 
-            /**
-             * Date: Feb 27, 2014
-             * Copyright (C) 2014 Tieto Poland Sp. z o.o.
-             *
-             * TietoTODO: this loop returns first stack which is not a homestack
-             * maybe its worth to remove it?
-             */
-//            for (int stackNdx = mStacks.size() - 1; stackNdx > 0; --stackNdx) {
-//                ActivityStack stack = mStacks.get(stackNdx);
-//                if (!stack.isHomeStack()) {
-//                    if (DEBUG_FOCUS || DEBUG_STACK) Slog.d(TAG,
-//                            "adjustStackFocus: Setting focused stack=" + stack);
-//                    mFocusedStack = stack;
-//                    return mFocusedStack;
-//                }
-//            }
             // Time to create the first app stack for this user.
             /**
              * Date: Mar 21, 2014
@@ -1359,6 +1343,26 @@ public final class ActivityStackSupervisor {
             }
 
             intentFlags = (r.intent != null) ? r.intent.getFlags() : 0;
+            boolean isMultiwindow = (intentFlags & Intent.FLAG_ACTIVITY_RUN_IN_WINDOW) != 0;
+
+            /**
+             * Date: Feb 27, 2014
+             * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+             *
+             * TietoTODO: this loop returns first stack which is not a homestack
+             * Use the same stack for regular apps (non multiwindow).
+             */
+            if (!isMultiwindow) {
+                for (int stackNdx = mStacks.size() - 1; stackNdx > 0; --stackNdx) {
+                    ActivityStack stack = mStacks.get(stackNdx);
+                    if (!stack.isHomeStack() && !stack.isMultiwindowStack()) {
+                        if (DEBUG_FOCUS || DEBUG_STACK) Slog.d(TAG,
+                                "adjustStackFocus: Setting focused stack=" + stack);
+                        mFocusedStack = stack;
+                        return mFocusedStack;
+                    }
+                }
+            }
 
             /**
              * Date: Apr 8, 2014
@@ -1374,7 +1378,6 @@ public final class ActivityStackSupervisor {
                     intentFlags &= ~Intent.FLAG_ACTIVITY_RUN_ON_EXTERNAL_DISPLAY;
                 }
             }
-            boolean isMultiwindow = (intentFlags & Intent.FLAG_ACTIVITY_RUN_IN_WINDOW) != 0;
             int stackId =
                     mService.createStack(-1, parentStackId, isMultiwindow ?
                            StackBox.TASK_FLOATING : StackBox.TASK_STACK_GOES_OVER, 1.0f);
