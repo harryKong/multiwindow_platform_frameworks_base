@@ -2509,13 +2509,6 @@ public class PhoneWindow extends Window implements MenuBuilder.Callback {
 
         @Override
         protected boolean fitSystemWindows(Rect insets) {
-            if (mDecorMW != null) {
-                int of = mDecorMW.getBorderPadding();
-                insets.top += of;
-                insets.left += of;
-                insets.bottom += of;
-                insets.right += of;
-            }
             mFrameOffsets.set(insets);
             updateStatusGuard(insets);
             updateNavigationGuard(insets);
@@ -3163,7 +3156,13 @@ public class PhoneWindow extends Window implements MenuBuilder.Callback {
 
     }
 
-    protected ViewGroup generateLayout(DecorView decor) {
+    /**
+     * Date: May 13, 2014
+     * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+     *
+     * of = offset for Android decor. It makes space for multiwindow decor.
+     */
+    protected ViewGroup generateLayout(DecorView decor, int of) {
         // Apply data from current theme.
 
         TypedArray a = getWindowStyle();
@@ -3385,7 +3384,16 @@ public class PhoneWindow extends Window implements MenuBuilder.Callback {
         mDecor.startChanging();
 
         View in = mLayoutInflater.inflate(layoutResource, null);
-        decor.addView(in, new ViewGroup.LayoutParams(MATCH_PARENT, MATCH_PARENT));
+        /**
+         * Date: May 13, 2014
+         * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+         *
+         * Makes place for multiwindow decor.
+         */
+        FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+        lp.setMargins(of, of, of, of);
+        decor.addView(in, lp);
 
         ViewGroup contentParent = (ViewGroup)findViewById(ID_ANDROID_CONTENT);
         if (contentParent == null) {
@@ -3457,7 +3465,17 @@ public class PhoneWindow extends Window implements MenuBuilder.Callback {
             }
         }
         if (mContentParent == null) {
-            mContentParent = generateLayout(mDecor);
+            /**
+             * Date: May 13, 2014
+             * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+             *
+             * If multiwindow, set margin for content (make place for decor frame).
+             */
+            if (isMWPanel()) {
+                mContentParent = generateLayout(mDecor, mDecorMW.getBorderPadding());
+            } else {
+                mContentParent = generateLayout(mDecor, 0);
+            }
 
             // Set up decor part of UI to ignore fitsSystemWindows if appropriate.
             mDecor.makeOptionalFitsSystemWindows();
