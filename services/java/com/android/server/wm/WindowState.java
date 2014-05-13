@@ -482,9 +482,9 @@ final class WindowState implements WindowManagerPolicy.WindowState {
          *
          * If stackbox was relayouted, than use value from stackbox for parent frame
          */
-        if (stack != null && (stack.hasSibling() || stack.mStackBox.isCrappyRelayouted())) {
+        if (stack != null && (stack.hasSibling() || stack.mStackBox.isFloating())) {
             mContainingFrame.set(getStackBounds(stack));
-            if (mUnderStatusBar && !stack.mStackBox.isCrappyRelayouted()) {
+            if (mUnderStatusBar && !stack.mStackBox.isFloating()) {
                 mContainingFrame.top = pf.top;
             }
         } else {
@@ -571,39 +571,39 @@ final class WindowState implements WindowManagerPolicy.WindowState {
          * Date: Feb 27, 2014
          * Copyright (C) 2014 Tieto Poland Sp. z o.o.
          *
-         * if window is relayouted, it doesn't need to fit display
+         * if window is floating (multiwindow), it doesn't need to fit display
          */
-        if ((stack == null) || (!stack.mStackBox.isCrappyRelayouted())) {
+        if ((stack == null) || (!stack.mStackBox.isFloating())) {
             // Now make sure the window fits in the overall display.
             Gravity.applyDisplay(mAttrs.gravity, df, mFrame);
+
+            // Make sure the content and visible frames are inside of the
+            // final window frame.
+            mContentFrame.set(Math.max(mContentFrame.left, mFrame.left),
+                    Math.max(mContentFrame.top, mFrame.top),
+                    Math.min(mContentFrame.right, mFrame.right),
+                    Math.min(mContentFrame.bottom, mFrame.bottom));
+
+            mVisibleFrame.set(Math.max(mVisibleFrame.left, mFrame.left),
+                    Math.max(mVisibleFrame.top, mFrame.top),
+                    Math.min(mVisibleFrame.right, mFrame.right),
+                    Math.min(mVisibleFrame.bottom, mFrame.bottom));
+
+            mOverscanInsets.set(Math.max(mOverscanFrame.left - mFrame.left, 0),
+                    Math.max(mOverscanFrame.top - mFrame.top, 0),
+                    Math.max(mFrame.right - mOverscanFrame.right, 0),
+                    Math.max(mFrame.bottom - mOverscanFrame.bottom, 0));
+
+            mContentInsets.set(mContentFrame.left - mFrame.left,
+                    mContentFrame.top - mFrame.top,
+                    mFrame.right - mContentFrame.right,
+                    mFrame.bottom - mContentFrame.bottom);
+
+            mVisibleInsets.set(mVisibleFrame.left - mFrame.left,
+                    mVisibleFrame.top - mFrame.top,
+                    mFrame.right - mVisibleFrame.right,
+                    mFrame.bottom - mVisibleFrame.bottom);
         }
-
-        // Make sure the content and visible frames are inside of the
-        // final window frame.
-        mContentFrame.set(Math.max(mContentFrame.left, mFrame.left),
-                Math.max(mContentFrame.top, mFrame.top),
-                Math.min(mContentFrame.right, mFrame.right),
-                Math.min(mContentFrame.bottom, mFrame.bottom));
-
-        mVisibleFrame.set(Math.max(mVisibleFrame.left, mFrame.left),
-                Math.max(mVisibleFrame.top, mFrame.top),
-                Math.min(mVisibleFrame.right, mFrame.right),
-                Math.min(mVisibleFrame.bottom, mFrame.bottom));
-
-        mOverscanInsets.set(Math.max(mOverscanFrame.left - mFrame.left, 0),
-                Math.max(mOverscanFrame.top - mFrame.top, 0),
-                Math.max(mFrame.right - mOverscanFrame.right, 0),
-                Math.max(mFrame.bottom - mOverscanFrame.bottom, 0));
-
-        mContentInsets.set(mContentFrame.left - mFrame.left,
-                mContentFrame.top - mFrame.top,
-                mFrame.right - mContentFrame.right,
-                mFrame.bottom - mContentFrame.bottom);
-
-        mVisibleInsets.set(mVisibleFrame.left - mFrame.left,
-                mVisibleFrame.top - mFrame.top,
-                mFrame.right - mVisibleFrame.right,
-                mFrame.bottom - mVisibleFrame.bottom);
 
         mCompatFrame.set(mFrame);
         if (mEnforceSizeCompat) {
