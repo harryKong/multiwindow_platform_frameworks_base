@@ -2670,6 +2670,24 @@ public class PhoneWindow extends Window implements MenuBuilder.Callback {
             if (cb != null && !isDestroyed() && mFeatureId < 0) {
                 cb.onWindowFocusChanged(hasWindowFocus);
             }
+            /**
+             * Date: Jun 17, 2014
+             * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+             *
+             * TietoTODO: This is temporary solution for highlighting window
+             * border. The correct way - Activity should be notified whether has
+             * focus or not and Activity is propagating this information to
+             * PhoneWindow. One Activity can have multiple window (eg. popup
+             * menu). If other window than main Activity window has focus, than
+             * decor is not highlighted.
+             */
+            if (mDecorMW != null) {
+                if (hasWindowFocus) {
+                    mDecorMW.setFocus();
+                } else {
+                    mDecorMW.unsetFocus();
+                }
+            }
         }
 
         void updateWindowResizeState() {
@@ -3063,15 +3081,7 @@ public class PhoneWindow extends Window implements MenuBuilder.Callback {
                 }
             });
 
-//            try {
-//                if (!ActivityManagerNative.getDefault().isTopBarShown()) {
-//                    mRemoteConnected = true;
-//                    mInnerBorder.setAlpha(0f);
-//                }
-//            } catch (RemoteException e) {
-//                e.printStackTrace();
-//            }
-            setFocus();
+            unsetFocus();
         }
 
         public int getTopBarHeight() {
