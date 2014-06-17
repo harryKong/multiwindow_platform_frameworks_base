@@ -356,6 +356,13 @@ class DisplayContent {
             info.children[0] = getStackBoxInfo(box.mFirst);
             info.children[1] = getStackBoxInfo(box.mSecond);
         }
+        /**
+         * Date: May 27, 2014
+         * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+         *
+         * Propagate information about floating stacks
+         */
+        info.floating = box.isFloating();
         return info;
     }
 

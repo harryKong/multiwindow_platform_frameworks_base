@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2007 The Android Open Source Project
+ * Copyright (C) 2014 Tieto Poland Sp. z o.o
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1300,6 +1301,14 @@ public class ActivityManager {
         public StackBoxInfo[] children;
         public int stackId;
         public StackInfo stack;
+        /**
+         * Date: May 27, 2014
+         * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+         *
+         * Information, whether stack is floating stack, eg.
+         * can be moved around screen
+         */
+        public boolean floating;
 
         @Override
         public int describeContents() {
@@ -1319,6 +1328,7 @@ public class ActivityManager {
             } else {
                 stack.writeToParcel(dest, flags);
             }
+            dest.writeInt(floating ? 1 : 0);
         }
 
         public void readFromParcel(Parcel source) {
@@ -1334,6 +1344,7 @@ public class ActivityManager {
             } else {
                 stack = StackInfo.CREATOR.createFromParcel(source);
             }
+            floating = source.readInt() == 1;
         }
 
         public static final Creator<StackBoxInfo> CREATOR =
