@@ -4805,11 +4805,13 @@ public class WindowManagerService extends IWindowManager.Stub
                 }
                 final TaskStack stack = task.mStack;
                 final DisplayContent displayContent = task.getDisplayContent();
-                final boolean isHomeStackTask = stack.isHomeStack();
-                if (isHomeStackTask != displayContent.homeOnTop()) {
-                    // First move the stack itself.
-                    displayContent.moveHomeStackBox(isHomeStackTask);
-                }
+                /**
+                 * Date: Jul 8, 2014
+                 * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+                 *
+                 * There is more than two stacks. Than it is needed to use moveStackBoxToTop.
+                 */
+                displayContent.moveStackBoxToTop(stack.mStackId);
                 stack.moveTaskToTop(task);
             }
         } finally {

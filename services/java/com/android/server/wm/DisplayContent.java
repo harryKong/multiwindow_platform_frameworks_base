@@ -326,6 +326,7 @@ class DisplayContent {
          * Copyright (C) 2014 Tieto Poland Sp. z o.o.
          *
          * Allow creation of unlimited amount of stackboxes
+         * TietoTODO: regular and floating stackobxes!!!!!!!!!!!!!!!!!!!!!!!
          */
         mStackBoxes.add(toTop ? mStackBoxes.size() : 0, box);
     }
@@ -375,31 +376,34 @@ class DisplayContent {
     }
 
     /**
-     * Move the home StackBox to the top or bottom of mStackBoxes. That is the only place
-     * it is allowed to be. This is a nop if the home StackBox is already in the correct position.
-     * @param toTop Move home to the top of mStackBoxes if true, to the bottom if false.
-     * @return true if a change was made, false otherwise.
+     * Date: Jul 8, 2014
+     * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+     *
+     * Move stackBox to top. As there is more stacks than two,
+     * the moveHomeStackBox can't be used.
      */
-    boolean moveHomeStackBox(boolean toTop) {
-        /**
-         * Date: Apr 23, 2014
-         * Copyright (C) 2014 Tieto Poland Sp. z o.o.
-         *
-         * New implementaion of method. It keeps home stackbox always below
-         * floating stackboxes (multiwindow windows).
-         */
-        if (toTop) {
-            mStackBoxes.remove(mHomeStack.mStackBox);
+    boolean moveStackBoxToTop(int stackId) {
+        StackBox stackBox = null;
+        for (StackBox sb : mStackBoxes) {
+            if (sb.getStackId() == stackId) {
+                stackBox = sb;
+                break;
+            }
+        }
+        if (stackBox == null) {
+            return false;
+        }
+        mStackBoxes.remove(stackBox);
+        if (stackBox.isFloating()) {
+           mStackBoxes.add(stackBox);
+        } else {
             int i = 0;
             for (; i < mStackBoxes.size(); i++) {
                 if (mStackBoxes.get(i).isFloating()) {
                     break;
                 }
             }
-            mStackBoxes.add(i, mHomeStack.mStackBox);
-        } else {
-            mStackBoxes.remove(mHomeStack.mStackBox);
-            mStackBoxes.add(0, mHomeStack.mStackBox);
+            mStackBoxes.add(i, stackBox);
         }
         return true;
     }

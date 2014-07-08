@@ -1398,30 +1398,6 @@ final class ActivityStack {
             }
         }
 
-        // We need to start pausing the current activity so the top one
-        // can be resumed...
-        boolean pausing = mStackSupervisor.pauseBackStacks(userLeaving);
-        if (mResumedActivity != null) {
-            pausing = true;
-            startPausingLocked(userLeaving, false);
-            if (DEBUG_STATES) Slog.d(TAG, "resumeTopActivityLocked: Pausing " + mResumedActivity);
-        }
-        if (pausing) {
-            if (DEBUG_SWITCH || DEBUG_STATES) Slog.v(TAG,
-                    "resumeTopActivityLocked: Skip resume: need to start pausing");
-            // At this point we want to put the upcoming activity's process
-            // at the top of the LRU list, since we know we will be needing it
-            // very soon and it would be a waste to let it get killed if it
-            // happens to be sitting towards the end.
-            if (next.app != null && next.app.thread != null) {
-                // No reason to do full oom adj update here; we'll let that
-                // happen whenever it needs to later.
-                mService.updateLruProcessLocked(next.app, true, null);
-            }
-            if (DEBUG_STACK) mStackSupervisor.validateTopActivitiesLocked();
-            return true;
-        }
-
         // If the most recent activity was noHistory but was only stopped rather
         // than stopped+finished because the device went to sleep, we need to make
         // sure to finish it as we're making a new activity topmost.
@@ -3065,7 +3041,13 @@ final class ActivityStack {
             return;
         }
 
-        mStackSupervisor.moveHomeStack(isHomeStack());
+       /**
+        * Date: Jul 8, 2014
+        * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+        *
+        * There is more stacks than 2 so it is needed to set focus to apropriate stack.
+        */
+        mStackSupervisor.setFocusedStack(tr.stack);
 
         // Shift all activities with this task up to the top
         // of the stack, keeping them in the same internal order.
