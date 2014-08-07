@@ -371,15 +371,17 @@ public final class ActivityStackSupervisor {
             if (DEBUG_STACK) Slog.i(TAG, "removeTask: removing stack " + stack);
             mStacks.remove(stack);
             final int stackId = stack.mStackId;
-            final int nextStackId = mWindowManager.removeStack(stackId);
+            int nextStackId = mWindowManager.removeStack(stackId);
             // TODO: Perhaps we need to let the ActivityManager determine the next focus...
             if (mFocusedStack == null || mFocusedStack.mStackId == stackId) {
                 /**
-                 * Date: Jul 8, 2014
+                 * Date: Aug 7, 2014
                  * Copyright (C) 2014 Tieto Poland Sp. z o.o.
                  *
-                 * This is better, than distinguish between Home stack and other stacks.
+                 * Set focused stack to the next in mStacks. mStacks has pseudo
+                 * queued stacks (please see setFocusedStack method).
                  */
+                nextStackId = mStacks.get(mStacks.size()-1).mStackId;
                 setFocusedStack(getStack(nextStackId));
             }
         }
