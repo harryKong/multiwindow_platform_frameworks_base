@@ -17,26 +17,32 @@ package com.tieto.extension.multiwindow;
 
 import android.os.RemoteException;
 import android.util.Log;
-import android.util.SparseArray;
 import android.app.ActivityManagerNative;
 import android.app.IActivityManager;
 import android.app.ActivityManager.StackBoxInfo;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Rect;
-
 import java.util.List;
+import java.util.Vector;
 
 public class MultiwindowManager {
 
-    private static String TAG = "MultiwindowManager";
+    public static String TAG = "MultiwindowManager";
 
     private IActivityManager mService = null;
     private Context mContext = null;
+    private OnWindowChangeListener mOnAppListener;
+    private WindowListenerThread mWindowListener;
 
     public MultiwindowManager(Context ctx) {
         mService = ActivityManagerNative.getDefault();
         mContext = ctx;
+        mWindowListener = new WindowListenerThread(this);
+    }
+
+    public void setOnWindowChangeListener(OnWindowChangeListener listener) {
+        mWindowListener.setOnWindowChangeListener(listener);
     }
 
     public void startActivity(Intent intent) {
@@ -53,9 +59,10 @@ public class MultiwindowManager {
         return false;
     }
 
-    public SparseArray<Rect> getAllWindows() {
-        SparseArray<Rect> ret = new SparseArray<Rect>();
+    public Vector<Window> getAllWindows() {
+        Vector<Window> ret = new Vector<Window>();
         List<StackBoxInfo> list;
+        String pkg;
         try {
             list = mService.getStackBoxes();
         } catch (RemoteException e) {
@@ -64,7 +71,12 @@ public class MultiwindowManager {
         }
         for (StackBoxInfo sb : list) {
             if (sb.floating) {
-                ret.append(sb.stackId, sb.bounds);
+                /*
+                 * Split in pkg is nessesary, we need only name of the app without activity name.
+                 * First we need to split StackInfo message
+                 */
+                pkg = sb.stack.toString().split(" ")[5].split("/")[0];
+                ret.add(new Window(sb.bounds,pkg, sb.stackId));
             }
         }
         return ret;
