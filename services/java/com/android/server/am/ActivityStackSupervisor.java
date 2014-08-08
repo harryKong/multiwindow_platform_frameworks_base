@@ -169,12 +169,6 @@ public final class ActivityStackSupervisor {
     /** All the non-launcher stacks */
     private ArrayList<ActivityStack> mStacks = new ArrayList<ActivityStack>();
 
-    private static final int STACK_STATE_HOME_IN_FRONT = 0;
-    private static final int STACK_STATE_HOME_TO_BACK = 1;
-    private static final int STACK_STATE_HOME_IN_BACK = 2;
-    private static final int STACK_STATE_HOME_TO_FRONT = 3;
-    private int mStackState = STACK_STATE_HOME_IN_FRONT;
-
     /** List of activities that are waiting for a new activity to become visible before completing
      * whatever operation they are supposed to do. */
     final ArrayList<ActivityRecord> mWaitingVisibleActivities = new ArrayList<ActivityRecord>();
@@ -264,40 +258,51 @@ public final class ActivityStackSupervisor {
         if (mFocusedStack == null) {
             return mHomeStack;
         }
-        switch (mStackState) {
-            case STACK_STATE_HOME_IN_FRONT:
-            case STACK_STATE_HOME_TO_FRONT:
-                return mHomeStack;
-            case STACK_STATE_HOME_IN_BACK:
-            case STACK_STATE_HOME_TO_BACK:
-            default:
-                return mFocusedStack;
-        }
+        /**
+         * Date: Jul 8, 2014
+         * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+         *
+         * Get rid of stack states. There is more than two posibile combination
+         * of stack.
+         */
+        return mFocusedStack;
     }
 
     ActivityStack getLastStack() {
-        switch (mStackState) {
-            case STACK_STATE_HOME_IN_FRONT:
-            case STACK_STATE_HOME_TO_BACK:
-                return mHomeStack;
-            case STACK_STATE_HOME_TO_FRONT:
-            case STACK_STATE_HOME_IN_BACK:
-            default:
-                return mFocusedStack;
-        }
+        /**
+         * Date: Jul 8, 2014
+         * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+         *
+         * Get rid of stack states. There is more than two posibile combination
+         * of stack.
+         * TietoTODO: this function can be removed.
+         */
+        return getFocusedStack();
     }
 
     boolean isFrontStack(ActivityStack stack) {
-        return !(stack.isHomeStack() ^ getFocusedStack().isHomeStack());
+        /**
+         * Date: Jul 8, 2014
+         * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+         *
+         * Silent assumption that always focused stack is front stack.
+         */
+        return stack == getFocusedStack();
     }
 
     void moveHomeStack(boolean toFront) {
         final boolean homeInFront = isFrontStack(mHomeStack);
         if (homeInFront ^ toFront) {
-            if (DEBUG_STACK) Slog.d(TAG, "moveHomeTask: mStackState old=" +
-                    stackStateToString(mStackState) + " new=" + stackStateToString(homeInFront ?
-                    STACK_STATE_HOME_TO_BACK : STACK_STATE_HOME_TO_FRONT));
-            mStackState = homeInFront ? STACK_STATE_HOME_TO_BACK : STACK_STATE_HOME_TO_FRONT;
+           /**
+            * Date: Jul 8, 2014
+            * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+            *
+            * TietoTODO: I think, this method should be removed, as there is more than
+            * two states of stacks.
+            */
+            if (DEBUG_STACK) Slog.d(TAG, "moveHomeTask toFront:" + toFront + "old=" +
+                    mFocusedStack + " new=" + (homeInFront ? mFocusedStack : mHomeStack));
+            setFocusedStack(homeInFront ? mFocusedStack : mHomeStack);
         }
     }
 
@@ -366,11 +371,18 @@ public final class ActivityStackSupervisor {
             if (DEBUG_STACK) Slog.i(TAG, "removeTask: removing stack " + stack);
             mStacks.remove(stack);
             final int stackId = stack.mStackId;
-            final int nextStackId = mWindowManager.removeStack(stackId);
+            int nextStackId = mWindowManager.removeStack(stackId);
             // TODO: Perhaps we need to let the ActivityManager determine the next focus...
             if (mFocusedStack == null || mFocusedStack.mStackId == stackId) {
-                // If this is the last app stack, set mFocusedStack to null.
-                mFocusedStack = nextStackId == HOME_STACK_ID ? null : getStack(nextStackId);
+                /**
+                 * Date: Aug 7, 2014
+                 * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+                 *
+                 * Set focused stack to the next in mStacks. mStacks has pseudo
+                 * queued stacks (please see setFocusedStack method).
+                 */
+                nextStackId = mStacks.get(mStacks.size()-1).mStackId;
+                setFocusedStack(getStack(nextStackId));
             }
         }
     }
@@ -447,21 +459,6 @@ public final class ActivityStackSupervisor {
                 }
             }
         }
-        // TODO: Not sure if this should check if all Paused are complete too.
-        switch (mStackState) {
-            case STACK_STATE_HOME_TO_BACK:
-                if (DEBUG_STACK) Slog.d(TAG, "allResumedActivitiesComplete: mStackState old=" +
-                        stackStateToString(STACK_STATE_HOME_TO_BACK) + " new=" +
-                        stackStateToString(STACK_STATE_HOME_IN_BACK));
-                mStackState = STACK_STATE_HOME_IN_BACK;
-                break;
-            case STACK_STATE_HOME_TO_FRONT:
-                if (DEBUG_STACK) Slog.d(TAG, "allResumedActivitiesComplete: mStackState old=" +
-                        stackStateToString(STACK_STATE_HOME_TO_FRONT) + " new=" +
-                        stackStateToString(STACK_STATE_HOME_IN_FRONT));
-                mStackState = STACK_STATE_HOME_IN_FRONT;
-                break;
-        }
         return true;
     }
 
@@ -474,25 +471,6 @@ public final class ActivityStackSupervisor {
             }
         }
         return true;
-    }
-
-    /**
-     * Pause all activities in either all of the stacks or just the back stacks.
-     * @param userLeaving Passed to pauseActivity() to indicate whether to call onUserLeaving().
-     * @return true if any activity was paused as a result of this call.
-     */
-    boolean pauseBackStacks(boolean userLeaving) {
-        boolean someActivityPaused = false;
-        for (int stackNdx = mStacks.size() - 1; stackNdx >= 0; --stackNdx) {
-            final ActivityStack stack = mStacks.get(stackNdx);
-            if (!isFrontStack(stack) && stack.mResumedActivity != null) {
-                if (DEBUG_STATES) Slog.d(TAG, "pauseBackStacks: stack=" + stack +
-                        " mResumedActivity=" + stack.mResumedActivity);
-                stack.startPausingLocked(userLeaving, false);
-                someActivityPaused = true;
-            }
-        }
-        return someActivityPaused;
     }
 
     boolean allPausedActivitiesComplete() {
@@ -1300,7 +1278,13 @@ public final class ActivityStackSupervisor {
                 if (mFocusedStack != taskStack) {
                     if (DEBUG_FOCUS || DEBUG_STACK) Slog.d(TAG,
                             "adjustStackFocus: Setting focused stack to r=" + r + " task=" + task);
-                    mFocusedStack = taskStack.isHomeStack() ? null : taskStack;
+                    /**
+                     * Date: Jul 8, 2014
+                     * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+                     *
+                     * Use function for setting focused stack
+                     */
+                    setFocusedStack(taskStack);
                 } else {
                     if (DEBUG_FOCUS || DEBUG_STACK) Slog.d(TAG,
                         "adjustStackFocus: Focused stack already=" + mFocusedStack);
@@ -1358,7 +1342,13 @@ public final class ActivityStackSupervisor {
                     if (!stack.isHomeStack() && !stack.isMultiwindowStack()) {
                         if (DEBUG_FOCUS || DEBUG_STACK) Slog.d(TAG,
                                 "adjustStackFocus: Setting focused stack=" + stack);
-                        mFocusedStack = stack;
+                        /**
+                         * Date: Jul 8, 2014
+                         * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+                         *
+                         * Use function for setting focused stack
+                         */
+                        setFocusedStack(stack);
                         return mFocusedStack;
                     }
                 }
@@ -1394,7 +1384,13 @@ public final class ActivityStackSupervisor {
             }
             if (DEBUG_FOCUS || DEBUG_STACK) Slog.d(TAG, "adjustStackFocus: New stack r=" + r +
                     " stackId=" + stackId);
-            mFocusedStack = getStack(stackId);
+            /**
+             * Date: Jul 8, 2014
+             * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+             *
+             * Use function for setting focused stack
+             */
+            setFocusedStack(getStack(stackId));
             /**
              * Date: Apr 23, 2014
              * Copyright (C) 2014 Tieto Poland Sp. z o.o.
@@ -1408,32 +1404,38 @@ public final class ActivityStackSupervisor {
         return mHomeStack;
     }
 
-    void setFocusedStack(ActivityRecord r) {
+    /**
+     * Date: Jul 8, 2014
+     * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+     *
+     * Allow other classes to use this method to set focused stack.
+     * There is more possibility to set focused stack than launcher stack and
+     * application stack.
+     */
+    public void setFocusedStack(ActivityRecord r) {
         if (r == null) {
             return;
         }
+        ActivityStack focusedStack;
         if (!r.isApplicationActivity() || (r.task != null && !r.task.isApplicationTask())) {
-            if (mStackState != STACK_STATE_HOME_IN_FRONT) {
-                if (DEBUG_STACK || DEBUG_FOCUS) Slog.d(TAG, "setFocusedStack: mStackState old=" +
-                        stackStateToString(mStackState) + " new=" +
-                        stackStateToString(STACK_STATE_HOME_TO_FRONT) +
-                        " Callers=" + Debug.getCallers(3));
-                mStackState = STACK_STATE_HOME_TO_FRONT;
-            }
+            focusedStack = mHomeStack;
         } else {
             if (DEBUG_FOCUS || DEBUG_STACK) Slog.d(TAG,
                     "setFocusedStack: Setting focused stack to r=" + r + " task=" + r.task +
                     " Callers=" + Debug.getCallers(3));
             final ActivityStack taskStack = r.task.stack;
-            mFocusedStack = taskStack.isHomeStack() ? null : taskStack;
-            if (mStackState != STACK_STATE_HOME_IN_BACK) {
-                if (DEBUG_STACK) Slog.d(TAG, "setFocusedStack: mStackState old=" +
-                        stackStateToString(mStackState) + " new=" +
-                        stackStateToString(STACK_STATE_HOME_TO_BACK) +
-                        " Callers=" + Debug.getCallers(3));
-                mStackState = STACK_STATE_HOME_TO_BACK;
-            }
+            focusedStack = taskStack;
         }
+        setFocusedStack(focusedStack);
+    }
+
+    public void setFocusedStack(ActivityStack stack) {
+        if (DEBUG_STACK) Slog.d(TAG, "setFocusedStack: old=" +
+                mFocusedStack + " new=" + stack +
+                " Callers=" + Debug.getCallers(10));
+        mFocusedStack = stack;
+        mStacks.remove(mFocusedStack);
+        mStacks.add(mFocusedStack);
     }
 
     final int startActivityUncheckedLocked(ActivityRecord r,
@@ -1559,7 +1561,14 @@ public final class ActivityStackSupervisor {
                     targetStack.mLastPausedActivity = null;
                     if (DEBUG_TASKS) Slog.d(TAG, "Bring to front target: " + targetStack
                             + " from " + intentActivity);
-                    moveHomeStack(targetStack.isHomeStack());
+                    /**
+                     * Date: Jul 8, 2014
+                     * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+                     *
+                     * Get rid of getLastStack. Save last focused stack for later usage.
+                     */
+                    final ActivityStack lastStack = mFocusedStack;
+                    setFocusedStack(targetStack);
                     if (intentActivity.task.intent == null) {
                         // This task was started because of movement of
                         // the activity based on affinity...  now that we
@@ -1573,7 +1582,6 @@ public final class ActivityStackSupervisor {
                     // to have the same behavior as if a new instance was
                     // being started, which means not bringing it to the front
                     // if the caller is not itself in the front.
-                    final ActivityStack lastStack = getLastStack();
                     ActivityRecord curTop = lastStack == null?
                             null : lastStack.topRunningNonDelayedActivityLocked(notTop);
                     if (curTop != null && (curTop.task != intentActivity.task ||
@@ -1778,7 +1786,13 @@ public final class ActivityStackSupervisor {
         if (r.resultTo == null && !addingToTask
                 && (launchFlags&Intent.FLAG_ACTIVITY_NEW_TASK) != 0) {
             targetStack = adjustStackFocus(r);
-            moveHomeStack(targetStack.isHomeStack());
+            /**
+             * Date: Jul 8, 2014
+             * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+             *
+             * There is more states than focused launcher stack and application stack.
+             */
+            setFocusedStack(targetStack);
             if (reuseTask == null) {
                 r.setTask(targetStack.createTaskRecord(getNextTaskId(),
                         newTaskInfo != null ? newTaskInfo : r.info,
@@ -1802,7 +1816,13 @@ public final class ActivityStackSupervisor {
         } else if (sourceRecord != null) {
             TaskRecord sourceTask = sourceRecord.task;
             targetStack = sourceTask.stack;
-            moveHomeStack(targetStack.isHomeStack());
+            /**
+             * Date: Jul 8, 2014
+             * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+             *
+             * There is more states than focused launcher stack and application stack.
+             */
+            setFocusedStack(targetStack);
             if (!addingToTask &&
                     (launchFlags&Intent.FLAG_ACTIVITY_CLEAR_TOP) != 0) {
                 // In this case, we are adding the activity to an existing
@@ -1856,7 +1876,13 @@ public final class ActivityStackSupervisor {
             // of a new task...  just put it in the top task, though these days
             // this case should never happen.
             targetStack = adjustStackFocus(r);
-            moveHomeStack(targetStack.isHomeStack());
+            /**
+             * Date: Jul 8, 2014
+             * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+             *
+             * There is more states than focused launcher stack and application stack.
+             */
+            setFocusedStack(targetStack);
             ActivityRecord prev = targetStack.topActivity();
             r.setTask(prev != null ? prev.task
                     : targetStack.createTaskRecord(getNextTaskId(), r.info, intent, true),
@@ -2204,7 +2230,7 @@ public final class ActivityStackSupervisor {
          *
          * set focused stack  to this, where task was moved
          */
-        mFocusedStack = stack;
+        setFocusedStack(stack);
         stack.addTask(task, toTop);
         mWindowManager.addTask(taskId, stackId, toTop);
         resumeTopActivitiesLocked();
@@ -2415,7 +2441,13 @@ public final class ActivityStackSupervisor {
             stack = mHomeStack;
         }
         final boolean homeInFront = stack.isHomeStack();
-        moveHomeStack(homeInFront);
+        /**
+         * Date: Jul 8, 2014
+         * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+         *
+         * There is more states than focused launcher stack and application stack.
+         */
+        setFocusedStack(stack);
         mWindowManager.moveTaskToTop(stack.topTask().taskId);
         return homeInFront;
     }
@@ -2494,21 +2526,10 @@ public final class ActivityStackSupervisor {
         }
     }
 
-    private static String stackStateToString(int stackState) {
-        switch (stackState) {
-            case STACK_STATE_HOME_IN_FRONT: return "STACK_STATE_HOME_IN_FRONT";
-            case STACK_STATE_HOME_TO_BACK: return "STACK_STATE_HOME_TO_BACK";
-            case STACK_STATE_HOME_IN_BACK: return "STACK_STATE_HOME_IN_BACK";
-            case STACK_STATE_HOME_TO_FRONT: return "STACK_STATE_HOME_TO_FRONT";
-            default: return "Unknown stackState=" + stackState;
-        }
-    }
-
     public void dump(PrintWriter pw, String prefix) {
         pw.print(prefix); pw.print("mDismissKeyguardOnNextActivity=");
                 pw.println(mDismissKeyguardOnNextActivity);
         pw.print(prefix); pw.print("mFocusedStack=" + mFocusedStack);
-                pw.print(" mStackState="); pw.println(stackStateToString(mStackState));
         pw.print(prefix); pw.println("mSleepTimeout=" + mSleepTimeout);
         pw.print(prefix); pw.println("mCurTaskId=" + mCurTaskId);
         pw.print(prefix); pw.println("mUserStackInFront=" + mUserStackInFront);

@@ -122,7 +122,13 @@ public class TaskStack {
 
         task.mStack = this;
         mDisplayContent.addTask(task, toTop);
-        return mDisplayContent.moveHomeStackBox(mStackId == HOME_STACK_ID);
+        /**
+         * Date: Jul 8, 2014
+         * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+         *
+         * More than two stacks, it is needed to use new method.
+         */
+        return mDisplayContent.moveStackBoxToTop(mStackId);
     }
 
     boolean moveTaskToTop(Task task) {

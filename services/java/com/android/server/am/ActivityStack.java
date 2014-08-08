@@ -1071,6 +1071,24 @@ final class ActivityStack {
          */
         boolean behindFullscreen = !isMultiwindowStack() && !mStackSupervisor.isFrontStack(this) &&
                 !(forceHomeShown && isHomeStack());
+        /**
+         * Date: Aug 7, 2014
+         * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+         *
+         * Stack is behindFullscreen, but maybe it isn't. When mw app is launched
+         * from app, than Home is shown in background instead of this particualar
+         * app. Below lines check if non-Home stack is above Home stack.
+         */
+        if (behindFullscreen) {
+            for (ActivityStack as : mStackSupervisor.getStacks()) {
+                if (as == this) {
+                    break;
+                } else if (as.isHomeStack()) {
+                    behindFullscreen = false;
+                    break;
+                }
+            }
+        }
         for (int taskNdx = mTaskHistory.size() - 1; taskNdx >= 0; --taskNdx) {
             final TaskRecord task = mTaskHistory.get(taskNdx);
             final ArrayList<ActivityRecord> activities = task.mActivities;
@@ -1279,6 +1297,15 @@ final class ActivityStack {
             ActivityOptions.abort(options);
             if (DEBUG_STATES) Slog.d(TAG, "resumeTopActivityLocked: No more activities go home");
             if (DEBUG_STACK) mStackSupervisor.validateTopActivitiesLocked();
+            /**
+             * Date: Aug 7, 2014
+             * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+             *
+             * If multiwindow stack was closed, than do not bring home to front.
+             */
+            if (isMultiwindowStack()) {
+                return false;
+            }
             return mStackSupervisor.resumeHomeActivity(prev);
         }
 
@@ -1396,30 +1423,6 @@ final class ActivityStack {
                 next.startTime = SystemClock.uptimeMillis();
                 mLastStartedActivity = next;
             }
-        }
-
-        // We need to start pausing the current activity so the top one
-        // can be resumed...
-        boolean pausing = mStackSupervisor.pauseBackStacks(userLeaving);
-        if (mResumedActivity != null) {
-            pausing = true;
-            startPausingLocked(userLeaving, false);
-            if (DEBUG_STATES) Slog.d(TAG, "resumeTopActivityLocked: Pausing " + mResumedActivity);
-        }
-        if (pausing) {
-            if (DEBUG_SWITCH || DEBUG_STATES) Slog.v(TAG,
-                    "resumeTopActivityLocked: Skip resume: need to start pausing");
-            // At this point we want to put the upcoming activity's process
-            // at the top of the LRU list, since we know we will be needing it
-            // very soon and it would be a waste to let it get killed if it
-            // happens to be sitting towards the end.
-            if (next.app != null && next.app.thread != null) {
-                // No reason to do full oom adj update here; we'll let that
-                // happen whenever it needs to later.
-                mService.updateLruProcessLocked(next.app, true, null);
-            }
-            if (DEBUG_STACK) mStackSupervisor.validateTopActivitiesLocked();
-            return true;
         }
 
         // If the most recent activity was noHistory but was only stopped rather
@@ -3065,7 +3068,13 @@ final class ActivityStack {
             return;
         }
 
-        mStackSupervisor.moveHomeStack(isHomeStack());
+       /**
+        * Date: Jul 8, 2014
+        * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+        *
+        * There is more stacks than 2 so it is needed to set focus to apropriate stack.
+        */
+        mStackSupervisor.setFocusedStack(tr.stack);
 
         // Shift all activities with this task up to the top
         // of the stack, keeping them in the same internal order.
