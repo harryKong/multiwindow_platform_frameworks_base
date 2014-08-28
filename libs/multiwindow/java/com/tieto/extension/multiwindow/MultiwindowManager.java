@@ -33,16 +33,19 @@ public class MultiwindowManager {
     private IActivityManager mService = null;
     private Context mContext = null;
     private OnWindowChangeListener mOnAppListener;
-    private WindowListenerThread mWindowListener;
+    private static WindowListenerThread sWindowListener =  null;
 
     public MultiwindowManager(Context ctx) {
         mService = ActivityManagerNative.getDefault();
         mContext = ctx;
-        mWindowListener = new WindowListenerThread(this);
     }
 
     public void setOnWindowChangeListener(OnWindowChangeListener listener) {
-        mWindowListener.setOnWindowChangeListener(listener);
+        if(sWindowListener != null){
+            sWindowListener.interrupt();
+        }
+        sWindowListener = new WindowListenerThread(this);
+        sWindowListener.setOnWindowChangeListener(listener);
     }
 
     public void startActivity(Intent intent) {
