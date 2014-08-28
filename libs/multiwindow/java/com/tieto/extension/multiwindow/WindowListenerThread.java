@@ -28,7 +28,6 @@ import java.util.Vector;
 public class WindowListenerThread extends Thread {
     private MultiwindowManager mMultiwindow;
     private OnWindowChangeListener mOnAppListener;
-    private boolean mThreadIsRunning = false;
     private Vector<Window> mActualWindows;
     private final int REFRESH_TIME = 500;
     private final boolean DEBUG = false;
@@ -40,10 +39,8 @@ public class WindowListenerThread extends Thread {
 
     @Override
     public void run() {
-        mThreadIsRunning = true;
-        while(true) {
+        while(!isInterrupted()) {
             Vector<Window> refreshWindows = mMultiwindow.getAllWindows();
-
             if (checkForNewWindows(mActualWindows, refreshWindows)) {
                 for (Window window : refreshWindows) {
                     if (!mActualWindows.contains(window)) {
@@ -67,16 +64,17 @@ public class WindowListenerThread extends Thread {
                 Thread.sleep(REFRESH_TIME);
             } catch(InterruptedException e) {
                 Log.d(MultiwindowManager.TAG, "Application Listener thread dead", e);
+                interrupt();
             }
         }
     }
 
     public void setOnWindowChangeListener(OnWindowChangeListener listener) {
         mOnAppListener = listener;
-        if (!mThreadIsRunning) {
+        if (!isAlive()) {
             start();
         }
-     }
+    }
 
     private boolean checkForNewWindows(Vector<Window> actualWindows, Vector<Window> newWindows) {
         if (actualWindows.size() != newWindows.size()) {
