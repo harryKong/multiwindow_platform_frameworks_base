@@ -62,6 +62,22 @@ public class MultiwindowManager {
         return false;
     }
 
+    /**
+     * Method for closing application by stackbox id, it close tasks by their ids
+     * from stackboxes.
+     *
+     * @param stackId Argument for id of application stack.
+     * @return true if close succeed, false if not.
+     */
+    public boolean closeApplication(int stackId) {
+        try {
+            return mService.closeActivity(stackId);
+        } catch (RemoteException e) {
+            Log.e(TAG, "closeApplication failed ", e);
+        }
+        return false;
+    }
+
     public Vector<Window> getAllWindows() {
         Vector<Window> ret = new Vector<Window>();
         List<StackBoxInfo> list;

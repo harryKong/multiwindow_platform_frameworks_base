@@ -3036,15 +3036,11 @@ public class PhoneWindow extends Window implements MenuBuilder.Callback {
             mCloseBtn.setOnClickListener(new OnClickListener() {
                 @Override
                 public void onClick(View v) {
-//                    try{
-//                        Rect drawingRect = new Rect();
-//                        mDecor.getDrawingRect(drawingRect);
-//                        //ActivityManagerNative.getDefault().relayoutWindow(getStackID(), new Rect( drawingRect.left + 10000, drawingRect.top, drawingRect.right + 10000, drawingRect.bottom));
-//                        //ActivityManagerNative.getDefault().removeWindow(getStackID());
-//                    }
-//                    catch (RemoteException e) {
-//                        e.printStackTrace();
-//                    }
+                    try {
+                        ActivityManagerNative.getDefault().closeActivity(getStackBoxId());
+                    } catch (RemoteException e) {
+                        Log.e(TAG, "Close button failes", e);
+                    }
                 }
             });
 
