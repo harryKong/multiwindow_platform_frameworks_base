@@ -524,6 +524,18 @@ public interface IActivityManager extends IInterface {
      */
     public boolean relayoutWindow(int stackID, Rect r) throws RemoteException;
 
+    /**
+     * Date: Aug 28, 2014
+     * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+     *
+     * Close application in window.
+     *
+     * @param stackID identifies stack (stackbox id)
+     * @return true on success
+     * @throws RemoteException
+     */
+    public boolean closeActivity(int stackID) throws RemoteException;
+
     String descriptor = "android.app.IActivityManager";
 
     // Please keep these transaction codes the same -- they are also
@@ -716,4 +728,12 @@ public interface IActivityManager extends IInterface {
      * Transaction for changing window position
      */
     int RELAYOUT_WINDOW_CORNERSTONE_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+183;
+
+    /**
+     * Date: Aug 28, 2014
+     * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+     *
+     * Transaction for closing application in window
+     */
+    int CLOSE_ACTIVITY_WITH_WINDOW_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+184;
 }

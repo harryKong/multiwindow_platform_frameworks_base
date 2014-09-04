@@ -16650,4 +16650,25 @@ public final class ActivityManagerService extends ActivityManagerNative
         return true;
     }
 
+    /**
+     * Date: Aug 28, 2014
+     * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+     *
+     * Method for closing application by stackbox id and closing their tasks.
+     */
+    @Override
+    public boolean closeActivity(int stackID) {
+        boolean succeed = false;
+        long ident = Binder.clearCallingIdentity();
+        for (StackBoxInfo sb : getStackBoxes()) {
+            if (sb.stackId == stackID) {
+                for (int next = sb.stack.taskIds.length - 1; next >= 0; --next) {
+                    succeed = removeTask(sb.stack.taskIds[next], 0);
+                }
+            }
+        }
+        Binder.restoreCallingIdentity(ident);
+        return succeed;
+    }
+
 }

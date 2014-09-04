@@ -2048,6 +2048,22 @@ public abstract class ActivityManagerNative extends Binder implements IActivityM
             reply.writeBooleanArray(ret);
             return true;
         }
+
+        /**
+         * Date: Aug 28, 2014
+         * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+         *
+         * Close activity in window
+         */
+        case CLOSE_ACTIVITY_WITH_WINDOW_TRANSACTION: {
+            data.enforceInterface(IActivityManager.descriptor);
+            int stackId = data.readInt();
+            boolean[] ret = new boolean[1];
+            ret[0] = closeActivity(stackId);
+            reply.writeNoException();
+            reply.writeBooleanArray(ret);
+            return true;
+        }
         }
 
         return super.onTransact(code, data, reply, flags);
@@ -4702,6 +4718,25 @@ class ActivityManagerProxy implements IActivityManager
         return ret[0];
     }
 
+    /**
+     * Date: Feb 25, 2014
+     * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+     *
+     * Close activity in window
+     */
+    public boolean closeActivity(int stackID) throws RemoteException {
+        Parcel data = Parcel.obtain();
+        Parcel reply = Parcel.obtain();
+        data.writeInterfaceToken(IActivityManager.descriptor);
+        data.writeInt(stackID);
+        mRemote.transact(CLOSE_ACTIVITY_WITH_WINDOW_TRANSACTION, data, reply, 0);
+        reply.readException();
+        boolean[] ret = new boolean[1];
+        reply.readBooleanArray(ret);
+        data.recycle();
+        reply.recycle();
+        return ret[0];
+    }
 
     private IBinder mRemote;
 }
