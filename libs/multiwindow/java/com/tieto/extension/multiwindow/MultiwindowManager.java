@@ -100,4 +100,23 @@ public class MultiwindowManager {
         }
         return ret;
     }
+
+    /**
+     * Method for setting custom size of maximized window of Application window
+     * by pressing a maximize button. This method is used when you want different
+     * window size on mazimize than normal.
+     *
+     * @param fullScreen takes size of window in fullscreen.
+     * @return true if method succeed, false if not.
+     */
+    public boolean setMaximizedWindowSize(Rect size) {
+        try {
+            mService.setMaximizedWindowSize(size);
+            return true;
+        } catch (RemoteException e) {
+            Log.e(TAG, "setFullScreenRect failed ", e);
+            return false;
+        }
+    }
+
 }

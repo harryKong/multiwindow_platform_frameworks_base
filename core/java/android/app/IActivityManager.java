@@ -536,6 +536,26 @@ public interface IActivityManager extends IInterface {
      */
     public boolean closeActivity(int stackID) throws RemoteException;
 
+    /**
+     * Date: Aug 28, 2014
+     * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+     *
+     * Setter for custow maximized window size size of application.
+     *
+     * @param rect Takes a parameters of window (in Rect) of application
+     */
+    public void setMaximizedWindowSize(Rect rect) throws RemoteException;
+
+    /**
+     * Date: Aug 28, 2014
+     * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+     *
+     * Getter for custom maximized window size of application.
+     *
+     * @return Rect of window
+     */
+    public Rect getMaximizedWindowSize() throws RemoteException;
+
     String descriptor = "android.app.IActivityManager";
 
     // Please keep these transaction codes the same -- they are also
@@ -736,4 +756,20 @@ public interface IActivityManager extends IInterface {
      * Transaction for closing application in window
      */
     int CLOSE_ACTIVITY_WITH_WINDOW_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+184;
+
+    /**
+     * Date: Aug 28, 2014
+     * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+     *
+     * Transaction for setting custom maximized window size.
+     */
+    int SET_MAXIMIZED_WINDOW_SIZE_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+185;
+
+    /**
+     * Date: Aug 28, 2014
+     * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+     *
+     * Transaction for getting maximized window size.
+     */
+    int GET_MAXIMIZED_WINDOW_SIZE_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+186;
 }

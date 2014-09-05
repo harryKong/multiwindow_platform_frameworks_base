@@ -2957,7 +2957,6 @@ public class PhoneWindow extends Window implements MenuBuilder.Callback {
 
         private LinearLayout mHeader;
         private ImageButton mCloseBtn;
-        private ImageButton mLaunchBtn;
         private ImageButton mMaximizeBtn;
         private View mInnerBorder;
         private View mOuterBorder;
@@ -2966,7 +2965,6 @@ public class PhoneWindow extends Window implements MenuBuilder.Callback {
         private View mRightResize;
 
         private View mDecorView;
-//        private ComponentName mDefaultApp;
         private int mTopBarHeight;
         private int mMultiwindowHeight;
         private int mStatusBarHeight;
@@ -2989,16 +2987,14 @@ public class PhoneWindow extends Window implements MenuBuilder.Callback {
             mStatusBarHeight = getContext().getResources().getDimensionPixelSize(com.android.internal.R.dimen.status_bar_height);
             mBorderPadding = mDecorView.getPaddingLeft() + mTopBarHeight;
             mCloseBtn = (ImageButton)mDecorView.findViewById(com.android.internal.R.id.mwCloseBtn);
-            mLaunchBtn = (ImageButton)mDecorView.findViewById(com.android.internal.R.id.mwLaunchBtn);
             mMaximizeBtn = (ImageButton)mDecorView.findViewById(com.android.internal.R.id.mwMaximizeBtn);
             mInnerBorder = mDecorView.findViewById(com.android.internal.R.id.mwInnerBorder);
             mOuterBorder = mDecorView.findViewById(com.android.internal.R.id.mwOuterBorder);
             mBackground = mDecorView.findViewById(com.android.internal.R.id.mwBackground);
             mLeftResize = mDecorView.findViewById(com.android.internal.R.id.mwResizeLeft);
             mRightResize = mDecorView.findViewById(com.android.internal.R.id.mwResizeRight);
-
-            DisplayMetrics metrics = getContext().getResources().getDisplayMetrics();
-            mFullScreen = new Rect(0, mStatusBarHeight + mMultiwindowHeight, metrics.widthPixels, metrics.heightPixels);
+            final DisplayMetrics metrics = getContext().getResources().getDisplayMetrics();
+            mFullScreen = new Rect(0, mStatusBarHeight, metrics.widthPixels, metrics.heightPixels);
 
             mHeader.setOnTouchListener(new TouchListener(new ResizeWindow() {
                 @Override
@@ -3044,36 +3040,31 @@ public class PhoneWindow extends Window implements MenuBuilder.Callback {
                 }
             });
 
-            mLaunchBtn.setOnClickListener(new OnClickListener() {
-                @Override
-                public void onClick(View v) {
-//                    Intent intent = new Intent();
-//                    intent.setComponent(mDefaultApp);
-//                    startMultiwindowApp(intent, getStackID());
-                }
-            });
-
             mMaximizeBtn.setOnClickListener(new OnClickListener() {
                 @Override
                 public void onClick(View v) {
-//                    try{
-//                        Rect newSize = new Rect(mFullScreen);
-//                        Rect actualSize = new Rect(mDecor.getViewRootImpl().mWinFrame);
-//                        boolean maximized = actualSize.equals(newSize);
-//                        if (maximized) {
-//                            //we are maximized, return to previous size
-//                            newSize = mOldSize;
-//                        }
-//                        boolean relayoutSuccessful = ActivityManagerNative.getDefault().relayoutWindow(getStackID(), newSize);
-//                        if (relayoutSuccessful) {
-//                            mOldSize = actualSize;
-//                            mMaximizeBtn.setImageResource(maximized ? com.android.internal.R.drawable.mw_btn_maximize :
-//                                com.android.internal.R.drawable.mw_btn_minimize);
-//                        }
-//                    }
-//                    catch (RemoteException e) {
-//                        e.printStackTrace();
-//                    }
+                    Rect actualWindowSize = new Rect(mDecor.getViewRootImpl().mWinFrame);
+                    try {
+                        Rect customMaximizedWindowSize = ActivityManagerNative.getDefault().getMaximizedWindowSize();
+                        if (!customMaximizedWindowSize.equals(new Rect())) {
+                            mFullScreen = customMaximizedWindowSize;
+                        } else {
+                            mFullScreen = new Rect(0, mStatusBarHeight, metrics.widthPixels, metrics.heightPixels);
+                        }
+                        if (!actualWindowSize.equals(mFullScreen)){
+                            mOldSize = actualWindowSize;
+                            ActivityManagerNative.getDefault().relayoutWindow(getStackBoxId(), mFullScreen);
+                            actualWindowSize = mFullScreen;
+                        } else {
+                            if (mOldSize == null) {
+                                mOldSize = new Rect(mDecor.getViewRootImpl().mWinFrame);
+                            }
+                            actualWindowSize = mOldSize;
+                            ActivityManagerNative.getDefault().relayoutWindow(getStackBoxId(), mOldSize);
+                        }
+                    } catch (RemoteException e) {
+                        Log.e(TAG, "Maximize failed", e);
+                    }
                 }
             });
 
