@@ -20,6 +20,7 @@ import android.util.Log;
 import android.app.ActivityManagerNative;
 import android.app.IActivityManager;
 import android.app.ActivityManager.StackBoxInfo;
+import android.content.pm.PackageManager;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Rect;
@@ -34,10 +35,12 @@ public class MultiwindowManager {
     private Context mContext = null;
     private OnWindowChangeListener mOnAppListener;
     private static WindowListenerThread sWindowListener =  null;
+    private static String sPermissionName = "android.permission.MULTIWINDOW";
 
     public MultiwindowManager(Context ctx) {
         mService = ActivityManagerNative.getDefault();
         mContext = ctx;
+        checkPermission();
     }
 
     public void setOnWindowChangeListener(OnWindowChangeListener listener) {
@@ -116,6 +119,16 @@ public class MultiwindowManager {
         } catch (RemoteException e) {
             Log.e(TAG, "setFullScreenRect failed ", e);
             return false;
+        }
+    }
+
+    public void checkPermission(){
+        PackageManager pm = mContext.getPackageManager();
+        String packageName = mContext.getPackageName();
+        int havePermission = pm.checkPermission(sPermissionName, packageName);
+
+        if (havePermission != pm.PERMISSION_GRANTED) {
+            throw new SecurityException("You don't have permission to use Multiwindow!");
         }
     }
 
