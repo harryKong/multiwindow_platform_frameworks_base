@@ -340,6 +340,15 @@ public final class ActivityManagerService extends ActivityManagerNative
     // devices.
     private boolean mShowDialogs = true;
 
+     /**
+     * Date: Aug 29, 2014
+     * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+     *
+     * Variable for keeping size of maximized window of application window if not set,
+     * and kept as new Rect(), maximized window is taken from metrics height and width.
+     */
+    private Rect mMaximizedWindowSize = new Rect();
+
     /**
      * Description of a request to start a new activity, which has been held
      * due to app switches being disabled.
@@ -16670,5 +16679,28 @@ public final class ActivityManagerService extends ActivityManagerNative
         Binder.restoreCallingIdentity(ident);
         return succeed;
     }
+
+    /**
+     * Date: Aug 29, 2014
+     * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+     *
+     * Setter for custom maximized window size of maximize button on window
+     */
+    @Override
+    public void setMaximizedWindowSize(Rect screen) {
+        mMaximizedWindowSize = screen;
+    }
+
+    /**
+     * Date: Aug 29, 2014
+     * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+     *
+     * Getter for custom maximized window size of maximize button on window
+     */
+    @Override
+    public Rect getMaximizedWindowSize() {
+        return mMaximizedWindowSize;
+    }
+
 
 }

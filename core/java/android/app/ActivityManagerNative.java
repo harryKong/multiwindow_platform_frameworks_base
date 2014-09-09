@@ -2064,6 +2064,35 @@ public abstract class ActivityManagerNative extends Binder implements IActivityM
             reply.writeBooleanArray(ret);
             return true;
         }
+
+        /**
+         * Date: Aug 28, 2014
+         * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+         *
+         * Set maximized size of application in window
+         */
+        case SET_MAXIMIZED_WINDOW_SIZE_TRANSACTION: {
+            data.enforceInterface(IActivityManager.descriptor);
+            Rect r = new Rect();
+            r.readFromParcel(data);
+            setMaximizedWindowSize(r);
+            reply.writeNoException();
+            return true;
+        }
+
+        /**
+         * Date: Aug 28, 2014
+         * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+         *
+         * Get maximized size of application in window
+         */
+        case GET_MAXIMIZED_WINDOW_SIZE_TRANSACTION: {
+            data.enforceInterface(IActivityManager.descriptor);
+            Rect r = getMaximizedWindowSize();
+            r.writeToParcel(reply, 0);
+            reply.writeNoException();
+            return true;
+        }
         }
 
         return super.onTransact(code, data, reply, flags);
@@ -4737,6 +4766,43 @@ class ActivityManagerProxy implements IActivityManager
         reply.recycle();
         return ret[0];
     }
+
+    /**
+     * Date: Aug 28, 2014
+     * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+     *
+     * Setter for custom maximized window size.
+     */
+    public void setMaximizedWindowSize(Rect screen) throws RemoteException {
+        Parcel data = Parcel.obtain();
+        Parcel reply = Parcel.obtain();
+        data.writeInterfaceToken(IActivityManager.descriptor);
+        screen.writeToParcel(data,0);
+        mRemote.transact(SET_MAXIMIZED_WINDOW_SIZE_TRANSACTION, data, reply, 0);
+        reply.readException();
+        data.recycle();
+        reply.recycle();
+    }
+
+    /**
+     * Date: Aug 28, 2014
+     * Copyright (C) 2014 Tieto Poland Sp. z o.o.
+     *
+     * Getter for custom maximized window size.
+     */
+    public Rect getMaximizedWindowSize() throws RemoteException {
+        Parcel data = Parcel.obtain();
+        Parcel reply = Parcel.obtain();
+        data.writeInterfaceToken(IActivityManager.descriptor);
+        mRemote.transact(GET_MAXIMIZED_WINDOW_SIZE_TRANSACTION, data, reply, 0);
+        Rect screen = new Rect();
+        screen.readFromParcel(reply);
+        reply.readException();
+        data.recycle();
+        reply.recycle();
+        return screen;
+    }
+
 
     private IBinder mRemote;
 }
