@@ -19,6 +19,17 @@
             android:layout_gravity="center"
             android:orientation="horizontal"
             android:background="@color/mw_blue_decor" >
+            <ImageView
+                android:id="@+id/mwIcon"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_gravity="center|left" />
+            <TextView
+                android:id="@+id/mwTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center|left"
+                android:textColor="@android:color/black" />
             <View
                 android:layout_width="0dp"
                 android:layout_height="0dp"

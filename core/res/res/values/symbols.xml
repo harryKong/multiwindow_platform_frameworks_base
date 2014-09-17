@@ -1767,6 +1767,8 @@
   <java-symbol type="id" name="mwBackground" />
   <java-symbol type="id" name="mwResizeLeft" />
   <java-symbol type="id" name="mwResizeRight" />
+  <java-symbol type="id" name="mwIcon" />
+  <java-symbol type="id" name="mwTitle" />
   <java-symbol type="color" name="mw_blue_decor" />
   <java-symbol type="color" name="mw_transparent_white" />
   <java-symbol type="color" name="mw_white_border" />
