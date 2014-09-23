@@ -45,6 +45,8 @@ import android.app.KeyguardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
+import android.content.pm.PackageManager;
+import android.content.pm.ApplicationInfo;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.content.res.TypedArray;
@@ -2963,6 +2965,8 @@ public class PhoneWindow extends Window implements MenuBuilder.Callback {
         private View mBackground;
         private View mLeftResize;
         private View mRightResize;
+        private ImageView mAppIcon;
+        private TextView mAppName;
 
         private View mDecorView;
         private int mTopBarHeight;
@@ -2993,8 +2997,16 @@ public class PhoneWindow extends Window implements MenuBuilder.Callback {
             mBackground = mDecorView.findViewById(com.android.internal.R.id.mwBackground);
             mLeftResize = mDecorView.findViewById(com.android.internal.R.id.mwResizeLeft);
             mRightResize = mDecorView.findViewById(com.android.internal.R.id.mwResizeRight);
+            mAppIcon = (ImageView) mDecorView.findViewById(com.android.internal.R.id.mwIcon);
+            mAppName =(TextView) mDecorView.findViewById(com.android.internal.R.id.mwTitle);
             final DisplayMetrics metrics = getContext().getResources().getDisplayMetrics();
             mFullScreen = new Rect(0, mStatusBarHeight, metrics.widthPixels, metrics.heightPixels);
+
+            PackageManager pm = getContext().getPackageManager();
+            ApplicationInfo ai = getContext().getApplicationInfo();
+            Drawable icon = ai.loadIcon(pm);
+            mAppName.setText(pm.getApplicationLabel(ai));
+            mAppIcon.setImageDrawable(icon);
 
             mHeader.setOnTouchListener(new TouchListener(new ResizeWindow() {
                 @Override
