@@ -1387,7 +1387,7 @@ public final class PowerManagerService extends IPowerManager.Stub
                                 USER_ACTIVITY_SCREEN_BRIGHT : USER_ACTIVITY_SCREEN_DIM;
                     }
                 }
-                if (mUserActivitySummary != 0) {
+				if (mUserActivitySummary != 0 && mScreenOffTimeoutSetting > 0) {
                     Message msg = mHandler.obtainMessage(MSG_USER_ACTIVITY_TIMEOUT);
                     msg.setAsynchronous(true);
                     mHandler.sendMessageAtTime(msg, nextTimeout);
@@ -1425,6 +1425,7 @@ public final class PowerManagerService extends IPowerManager.Stub
     }
 
     private int getScreenOffTimeoutLocked() {
+        int DonotSleeptimeout;
         int timeout = mScreenOffTimeoutSetting;
         if (isMaximumScreenOffTimeoutFromDeviceAdminEnforcedLocked()) {
             timeout = Math.min(timeout, mMaximumScreenOffTimeoutFromDeviceAdmin);
@@ -1432,6 +1433,13 @@ public final class PowerManagerService extends IPowerManager.Stub
         if (mUserActivityTimeoutOverrideFromWindowManager >= 0) {
             timeout = (int)Math.min(timeout, mUserActivityTimeoutOverrideFromWindowManager);
         }
+		DonotSleeptimeout = mScreenOffTimeoutSetting;
+        if(DonotSleeptimeout < 0)
+        {
+            DonotSleeptimeout= mMaximumScreenOffTimeoutFromDeviceAdmin ;
+            return Math.max(DonotSleeptimeout, mMaximumScreenOffTimeoutFromDeviceAdmin);
+        }
+
         return Math.max(timeout, MINIMUM_SCREEN_OFF_TIMEOUT);
     }
 
