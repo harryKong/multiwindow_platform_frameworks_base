@@ -5494,7 +5494,7 @@ public class WindowManagerService extends IWindowManager.Stub
                     mStrictModeFlash = new StrictModeFlash(
                             getDefaultDisplayContentLocked().getDisplay(), mFxSession);
                 }
-                mStrictModeFlash.setVisibility(on);
+//                mStrictModeFlash.setVisibility(on);
             } finally {
                 SurfaceControl.closeTransaction();
                 if (SHOW_LIGHT_TRANSACTIONS) Slog.i(TAG,
