@@ -152,10 +152,11 @@ public class EthernetDataTracker extends BaseNetworkStateTracker {
         mNetworkInfo.setIsAvailable(false);
         mNetworkInfo.setDetailedState(DetailedState.DISCONNECTED, null, mHwAddr);
 
-        Message msg = mCsHandler.obtainMessage(EVENT_CONFIGURATION_CHANGED, mNetworkInfo);
-        msg.sendToTarget();
-
-        msg = mCsHandler.obtainMessage(EVENT_STATE_CHANGED, mNetworkInfo);
+//        Message msg = mCsHandler.obtainMessage(EVENT_CONFIGURATION_CHANGED, mNetworkInfo);
+//        msg.sendToTarget();
+//
+//        msg = mCsHandler.obtainMessage(EVENT_STATE_CHANGED, mNetworkInfo);
+		Message msg = mCsHandler.obtainMessage(EVENT_STATE_CHANGED, mNetworkInfo);
         msg.sendToTarget();
 
         if (!mNfsmode) {

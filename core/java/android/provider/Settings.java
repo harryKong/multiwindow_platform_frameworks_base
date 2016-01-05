@@ -2806,6 +2806,14 @@ public final class Settings {
             MOVED_TO_GLOBAL.add(Settings.Global.USB_MASS_STORAGE_ENABLED);
             MOVED_TO_GLOBAL.add(Settings.Global.USE_GOOGLE_MAIL);
             MOVED_TO_GLOBAL.add(Settings.Global.WEB_AUTOFILL_QUERY_URL);
+            MOVED_TO_GLOBAL.add(Settings.Global.ETHERNET_ON);
+            MOVED_TO_GLOBAL.add(Settings.Global.ETHERNET_MODE);
+            MOVED_TO_GLOBAL.add(Settings.Global.ETHERNET_IP);
+            MOVED_TO_GLOBAL.add(Settings.Global.ETHERNET_MASK);
+            MOVED_TO_GLOBAL.add(Settings.Global.ETHERNET_DNS);
+            MOVED_TO_GLOBAL.add(Settings.Global.ETHERNET_ROUTE);
+            MOVED_TO_GLOBAL.add(Settings.Global.ETHERNET_CONF);
+            MOVED_TO_GLOBAL.add(Settings.Global.ETHERNET_IFNAME);
             MOVED_TO_GLOBAL.add(Settings.Global.WIFI_COUNTRY_CODE);
             MOVED_TO_GLOBAL.add(Settings.Global.WIFI_FRAMEWORK_SCAN_INTERVAL_MS);
             MOVED_TO_GLOBAL.add(Settings.Global.WIFI_FREQUENCY_BAND);
@@ -5334,6 +5342,18 @@ public final class Settings {
         */
        public static final String WIFI_MOBILE_DATA_TRANSITION_WAKELOCK_TIMEOUT_MS =
            "wifi_mobile_data_transition_wakelock_timeout_ms";
+
+         /**
+         * Ethernet related configurations
+         */
+        public static final String ETHERNET_ON      = "ethernet_on";
+        public static final String ETHERNET_MODE    = "ethernet_mode";
+        public static final String ETHERNET_IP      = "ethernet_ip";
+        public static final String ETHERNET_MASK    = "ethernet_netmask";
+        public static final String ETHERNET_DNS     = "ethernet_dns";
+        public static final String ETHERNET_ROUTE   = "ethernet_iproute";
+        public static final String ETHERNET_CONF    = "ethernet_conf";
+        public static final String ETHERNET_IFNAME  = "ethernet_ifname";
 
        /**
         * The operational wifi frequency band

@@ -78,6 +78,7 @@ import android.net.RouteInfo;
 import android.net.SamplingDataTracker;
 import android.net.Uri;
 import android.net.wifi.WifiStateTracker;
+import android.net.ethernet.EthernetStateTracker;
 import android.net.wimax.WimaxManagerConstants;
 import android.os.AsyncTask;
 import android.os.Binder;
@@ -553,7 +554,7 @@ public class ConnectivityService extends IConnectivityManager.Stub {
                             n.type);
                     continue;
                 }
-                if (mRadioAttributes[n.radio] == null) {
+                if ((n.type != ConnectivityManager.TYPE_ETHERNET) && (mRadioAttributes[n.radio] == null)) {
                     loge("Error in networkAttributes - ignoring attempt to use undefined " +
                             "radio " + n.radio + " in network type " + n.type);
                     continue;
@@ -631,6 +632,16 @@ public class ConnectivityService extends IConnectivityManager.Stub {
             final NetworkConfig config = mNetConfigs[targetNetworkType];
             final NetworkStateTracker tracker;
             try {
+				
+				if(targetNetworkType == TYPE_ETHERNET)
+				{
+					if (DBG) log("Starting Ethernet Service.");
+					EthernetStateTracker est = new EthernetStateTracker(context, mHandler);
+					EthernetService ethService = new EthernetService(context, est);
+					ServiceManager.addService(Context.ETHERNET_SERVICE, ethService);
+					tracker = est;
+				}
+				else
                 tracker = netFactory.createTracker(targetNetworkType, config);
                 mNetTrackers[targetNetworkType] = tracker;
             } catch (IllegalArgumentException e) {
