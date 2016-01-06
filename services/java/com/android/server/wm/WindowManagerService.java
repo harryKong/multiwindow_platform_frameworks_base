@@ -6750,7 +6750,7 @@ public class WindowManagerService extends IWindowManager.Stub
             boolean hardKeyboardAvailable = config.keyboard != Configuration.KEYBOARD_NOKEYS;
             if (hardKeyboardAvailable != mHardKeyboardAvailable) {
                 mHardKeyboardAvailable = hardKeyboardAvailable;
-                mHardKeyboardEnabled = hardKeyboardAvailable;
+                mHardKeyboardEnabled = !hardKeyboardAvailable;
                 mH.removeMessages(H.REPORT_HARD_KEYBOARD_STATUS_CHANGE);
                 mH.sendEmptyMessage(H.REPORT_HARD_KEYBOARD_STATUS_CHANGE);
             }
