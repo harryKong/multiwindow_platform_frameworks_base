@@ -2003,6 +2003,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
             loadIntegerSetting(stmt, Settings.System.POINTER_SPEED,
                     R.integer.def_pointer_speed);
+
+            loadStringSetting(stmt, Settings.System.TIME_12_24,
+                    R.string.time_12_24);
         } finally {
             if (stmt != null) stmt.close();
         }
