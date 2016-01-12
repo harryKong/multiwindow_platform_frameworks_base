@@ -285,6 +285,9 @@ public class EthernetStateTracker extends Handler implements NetworkStateTracker
          */
         if (mEM != null) {
             EthernetDevInfo info = mEM.getSavedConfig();
+			if(mNfsmode && "eth0".equals(info.getIfName()))
+				return true;
+
             if (info != null && mEM.isConfigured()) {
                 synchronized (this) {
                     mInterfaceName = info.getIfName();

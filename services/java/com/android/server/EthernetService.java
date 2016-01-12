@@ -113,16 +113,7 @@ public class EthernetService<syncronized> extends IEthernetManager.Stub {
         final ContentResolver cr = mContext.getContentResolver();
         Settings.Global.putInt(cr, Settings.Global.ETHERNET_CONF, 1);
 
-		if("eth1".equals( info.getIfName()))
-		{
-        Settings.Global.putString(cr, Settings.Global.ETHERNET_IFNAME+"_eth1", info.getIfName());
-        Settings.Global.putString(cr, Settings.Global.ETHERNET_IP+"_eth1", info.getIpAddress());
-        Settings.Global.putString(cr, Settings.Global.ETHERNET_MODE+"_eth1", info.getConnectMode());
-        Settings.Global.putString(cr, Settings.Global.ETHERNET_DNS+"_eth1", info.getDnsAddr());
-        Settings.Global.putString(cr, Settings.Global.ETHERNET_ROUTE+"_eth1", info.getRouteAddr());
-        Settings.Global.putString(cr, Settings.Global.ETHERNET_MASK+"_eth1", info.getNetMask());
-		}
-		else
+		if("eth0".equals( info.getIfName()))
 		{
         Settings.Global.putString(cr, Settings.Global.ETHERNET_IFNAME, info.getIfName());
         Settings.Global.putString(cr, Settings.Global.ETHERNET_IP, info.getIpAddress());
@@ -130,6 +121,15 @@ public class EthernetService<syncronized> extends IEthernetManager.Stub {
         Settings.Global.putString(cr, Settings.Global.ETHERNET_DNS, info.getDnsAddr());
         Settings.Global.putString(cr, Settings.Global.ETHERNET_ROUTE, info.getRouteAddr());
         Settings.Global.putString(cr, Settings.Global.ETHERNET_MASK, info.getNetMask());
+		}
+		else
+		{
+        Settings.Global.putString(cr, Settings.Global.ETHERNET_IFNAME+"_"+info.getIfName(), info.getIfName());
+        Settings.Global.putString(cr, Settings.Global.ETHERNET_IP+"_"+info.getIfName(), info.getIpAddress());
+        Settings.Global.putString(cr, Settings.Global.ETHERNET_MODE+"_"+info.getIfName(), info.getConnectMode());
+        Settings.Global.putString(cr, Settings.Global.ETHERNET_DNS+"_"+info.getIfName(), info.getDnsAddr());
+        Settings.Global.putString(cr, Settings.Global.ETHERNET_ROUTE+"_"+info.getIfName(), info.getRouteAddr());
+        Settings.Global.putString(cr, Settings.Global.ETHERNET_MASK+"_"+info.getIfName(), info.getNetMask());
 		}
         if (mEthState == EthernetManager.ETHERNET_STATE_ENABLED) {
             try {
