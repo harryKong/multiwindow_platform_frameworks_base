@@ -938,19 +938,22 @@ public class PhoneWindowManager implements WindowManagerPolicy {
                     @Override
                     public void onSwipeFromTop() {
                         if (mStatusBar != null) {
-                            requestTransientBars(mStatusBar);
+//                            requestTransientBars(mStatusBar);
+                    Slog.d(TAG, "onSwipeFromTop");
                         }
                     }
                     @Override
                     public void onSwipeFromBottom() {
                         if (mNavigationBar != null && mNavigationBarOnBottom) {
-                            requestTransientBars(mNavigationBar);
+                    Slog.d(TAG, "onSwipeFromBottom");
+//                            requestTransientBars(mNavigationBar);
                         }
                     }
                     @Override
                     public void onSwipeFromRight() {
                         if (mNavigationBar != null && !mNavigationBarOnBottom) {
-                            requestTransientBars(mNavigationBar);
+                    Slog.d(TAG, "onSwipeFromRight");
+//                            requestTransientBars(mNavigationBar);
                         }
                     }
                     @Override
