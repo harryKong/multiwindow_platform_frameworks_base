@@ -1315,7 +1315,7 @@ public class KeyguardViewMediator {
         options.putBoolean(KeyguardViewManager.IS_SWITCHING_USER, mSwitchingUser);
         synchronized (KeyguardViewMediator.this) {
             if (DEBUG) Log.d(TAG, "handleReset");
-            mKeyguardViewManager.reset(options);
+//            mKeyguardViewManager.reset(options);
         }
     }
 
