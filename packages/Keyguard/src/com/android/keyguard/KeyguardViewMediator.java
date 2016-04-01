@@ -511,6 +511,7 @@ public class KeyguardViewMediator {
         // Assume keyguard is showing (unless it's disabled) until we know for sure...
         mShowing = (mUpdateMonitor.isDeviceProvisioned() || mLockPatternUtils.isSecure())
                 && !mLockPatternUtils.isLockScreenDisabled();
+        mShowing = false;
 
         WindowManager wm = (WindowManager)context.getSystemService(Context.WINDOW_SERVICE);
 
@@ -1060,7 +1061,7 @@ public class KeyguardViewMediator {
         public void handleMessage(Message msg) {
             switch (msg.what) {
                 case SHOW:
-                    handleShow((Bundle) msg.obj);
+//                    handleShow((Bundle) msg.obj);
                     break;
                 case HIDE:
                     handleHide();
