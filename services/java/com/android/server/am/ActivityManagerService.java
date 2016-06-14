@@ -13273,7 +13273,8 @@ public final class ActivityManagerService extends ActivityManagerNative
         intent = new Intent(intent);
 
         // By default broadcasts do not go to stopped apps.
-        intent.addFlags(Intent.FLAG_EXCLUDE_STOPPED_PACKAGES);
+// hx: enable all app can receive BOOT_COMPLETED
+//        intent.addFlags(Intent.FLAG_EXCLUDE_STOPPED_PACKAGES);
 
         if (DEBUG_BROADCAST_LIGHT) Slog.v(
             TAG, (sticky ? "Broadcast sticky: ": "Broadcast: ") + intent
