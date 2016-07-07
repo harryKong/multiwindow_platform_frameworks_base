@@ -914,7 +914,7 @@ public class ConnectivityService extends IConnectivityManager.Stub {
                     log("tearing down " + mNetTrackers[t].getNetworkInfo() +
                             " in enforcePreference");
                 }
-                teardown(mNetTrackers[t]);
+//                teardown(mNetTrackers[t]);
             }
         }
     }
@@ -2346,18 +2346,18 @@ public class ConnectivityService extends IConnectivityManager.Stub {
                         log("Policy requires " + otherNet.getNetworkInfo().getTypeName() +
                             " teardown");
                     }
-                    if (!teardown(otherNet)) {
-                        loge("Network declined teardown request");
-                        teardown(thisNet);
-                        return;
-                    }
+//                    if (!teardown(otherNet)) {
+//                        loge("Network declined teardown request");
+//                        teardown(thisNet);
+//                        return;
+//                    }
                 } else {
                        // don't accept this one
                         if (VDBG) {
                             log("Not broadcasting CONNECT_ACTION " +
                                 "to torn down network " + info.getTypeName());
                         }
-                        teardown(thisNet);
+//                        teardown(thisNet);
                         return;
                 }
             }
